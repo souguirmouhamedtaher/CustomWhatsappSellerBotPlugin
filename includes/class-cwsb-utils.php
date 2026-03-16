@@ -1,0 +1,273 @@
+<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * Shared normalization/conversion helpers used across plugin classes.
+ */
+class CWSB_Utils
+{
+    private static function has_encoding($encoding)
+    {
+        if (!function_exists('mb_list_encodings')) {
+            return false;
+        }
+
+        $needle = strtolower((string) $encoding);
+        foreach ((array) mb_list_encodings() as $enc) {
+            if (strtolower((string) $enc) === $needle) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function safe_convert($text, $fromEncoding)
+    {
+        if ($text === '' || !function_exists('mb_convert_encoding')) {
+            return '';
+        }
+
+        if (!self::has_encoding($fromEncoding)) {
+            return '';
+        }
+
+        try {
+            $converted = @mb_convert_encoding($text, 'UTF-8', $fromEncoding);
+            return is_string($converted) ? $converted : '';
+        } catch (Throwable $e) {
+            return '';
+        }
+    }
+
+    private static function reinterpret_utf8_via($text, $singleByteEncoding)
+    {
+        if ($text === '' || !function_exists('iconv')) {
+            return '';
+        }
+
+        if (!self::has_encoding($singleByteEncoding)) {
+            return '';
+        }
+
+        try {
+            $bytes = @iconv('UTF-8', $singleByteEncoding . '//IGNORE', $text);
+            if (!is_string($bytes) || $bytes === '') {
+                return '';
+            }
+
+            return self::safe_convert($bytes, $singleByteEncoding);
+        } catch (Throwable $e) {
+            return '';
+        }
+    }
+
+    private static function arabic_score($text)
+    {
+        if ($text === '') {
+            return 0;
+        }
+
+        if (function_exists('mb_check_encoding') && !@mb_check_encoding($text, 'UTF-8')) {
+            return 0;
+        }
+
+        $matches = @preg_match_all('/[\x{0600}-\x{06FF}]/u', $text);
+        return $matches === false ? 0 : (int) $matches;
+    }
+
+    private static function noise_score($text)
+    {
+        if ($text === '') {
+            return 0;
+        }
+
+        $count = 0;
+        $count += preg_match_all('/Ã/', $text);
+        $count += preg_match_all('/Â/', $text);
+        $count += preg_match_all('/â/', $text);
+        $count += preg_match_all('/�/', $text);
+        $count += preg_match_all('/Ø/', $text);
+        $count += preg_match_all('/Ù/', $text);
+        $count += preg_match_all('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', $text);
+        return (int) $count;
+    }
+
+    private static function choose_best_text($original, $candidates)
+    {
+        $best = $original;
+        $bestArabic = self::arabic_score($original);
+        $bestNoise = self::noise_score($original);
+
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate) || $candidate === '') {
+                continue;
+            }
+
+            $arabic = self::arabic_score($candidate);
+            $noise = self::noise_score($candidate);
+
+            if ($arabic > $bestArabic || ($arabic === $bestArabic && $noise < $bestNoise)) {
+                $best = $candidate;
+                $bestArabic = $arabic;
+                $bestNoise = $noise;
+            }
+        }
+
+        return $best;
+    }
+
+    private static function repair_arabic_text($text)
+    {
+        if ($text === '' || !function_exists('mb_convert_encoding')) {
+            return $text;
+        }
+
+        $candidates = [];
+
+        $latin1 = self::safe_convert($text, 'ISO-8859-1');
+        if ($latin1 !== '') {
+            $candidates[] = $latin1;
+        }
+
+        $latin1Reinterpreted = self::reinterpret_utf8_via($text, 'ISO-8859-1');
+        if ($latin1Reinterpreted !== '') {
+            $candidates[] = $latin1Reinterpreted;
+        }
+
+        $win1252 = self::safe_convert($text, 'Windows-1252');
+        if ($win1252 !== '') {
+            $candidates[] = $win1252;
+        }
+
+        $win1252Reinterpreted = self::reinterpret_utf8_via($text, 'Windows-1252');
+        if ($win1252Reinterpreted !== '') {
+            $candidates[] = $win1252Reinterpreted;
+        }
+
+        $win1256 = self::safe_convert($text, 'Windows-1256');
+        if ($win1256 !== '') {
+            $candidates[] = $win1256;
+        }
+
+        return self::choose_best_text($text, $candidates);
+    }
+
+    private static function looks_like_mojibake($text)
+    {
+        if ($text === '') {
+            return false;
+        }
+
+        return preg_match('/Ã.|Â.|â./', $text) === 1
+            || strpos($text, '�') !== false
+            || preg_match('/Ø.|Ù./', $text) === 1;
+    }
+
+    private static function marker_score($text)
+    {
+        if ($text === '') {
+            return 0;
+        }
+
+        $count = 0;
+        $count += preg_match_all('/Ã/', $text);
+        $count += preg_match_all('/Â/', $text);
+        $count += preg_match_all('/â/', $text);
+        $count += preg_match_all('/�/', $text);
+        $count += preg_match_all('/Ø/', $text);
+        $count += preg_match_all('/Ù/', $text);
+        $count += preg_match_all('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', $text);
+        return (int) $count;
+    }
+
+    private static function repair_mojibake($text)
+    {
+        if (!self::looks_like_mojibake($text)) {
+            return $text;
+        }
+
+        if (!function_exists('mb_convert_encoding')) {
+            return $text;
+        }
+
+        $latin1 = self::safe_convert($text, 'ISO-8859-1');
+        $win1252 = self::safe_convert($text, 'Windows-1252');
+
+        $repaired = self::choose_best_text($text, [$latin1, $win1252]);
+        if ($repaired === '' || $repaired === $text) {
+            return $text;
+        }
+
+        return self::marker_score($repaired) < self::marker_score($text) ? $repaired : $text;
+    }
+
+    public static function normalize_text($value)
+    {
+        $text = trim((string) $value);
+        if ($text === '') {
+            return '';
+        }
+
+        $repaired = self::repair_mojibake($text);
+        $repaired = self::repair_arabic_text($repaired);
+
+        return trim($repaired);
+    }
+
+    public static function normalize_phone($phone)
+    {
+        return preg_replace('/\D+/', '', (string) $phone);
+    }
+
+    public static function extract_phone_from_flow_token($flow_token)
+    {
+        $token = self::normalize_text($flow_token);
+        if ($token === '') {
+            return '';
+        }
+
+        if (!preg_match('/^flowtoken-(.+)-\d+$/', $token, $matches)) {
+            return '';
+        }
+
+        $raw = isset($matches[1]) ? (string) $matches[1] : '';
+        return self::normalize_phone($raw);
+    }
+
+    public static function to_money_string($value)
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        return self::normalize_text($value);
+    }
+
+    public static function to_int_or_zero($value)
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        return (int) $value;
+    }
+
+    public static function to_bool($value)
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        $normalized = strtolower(self::normalize_text($value));
+        return $normalized === '1' || $normalized === 'true' || $normalized === 'yes';
+    }
+
+    public static function now_ms()
+    {
+        return (int) round(microtime(true) * 1000);
+    }
+}
