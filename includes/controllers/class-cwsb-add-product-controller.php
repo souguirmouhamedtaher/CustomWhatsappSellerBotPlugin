@@ -5,19 +5,19 @@ if (!defined('ABSPATH')) {
 }
 
 if (!class_exists('CWSB_Response')) {
-    require_once __DIR__ . '/class-cwsb-response.php';
+    require_once __DIR__ . '/../utilities/class-cwsb-response.php';
 }
 
 if (!class_exists('CWSB_Auth_Middleware')) {
-    require_once __DIR__ . '/class-cwsb-auth-middleware.php';
+    require_once __DIR__ . '/../middleware/class-cwsb-auth-middleware.php';
 }
 
 if (!class_exists('CWSB_Seller_Repository')) {
-    require_once __DIR__ . '/class-cwsb-seller-repository.php';
+    require_once __DIR__ . '/../repositories/class-cwsb-seller-repository.php';
 }
 
 if (!class_exists('CWSB_Utils')) {
-    require_once __DIR__ . '/class-cwsb-utils.php';
+    require_once __DIR__ . '/../utilities/class-cwsb-utils.php';
 }
 
 /**
@@ -35,6 +35,17 @@ class CWSB_Add_Product_Controller
             'args' => [
                 'include_empty' => ['required' => false],
                 'parent_only' => ['required' => false],
+                'limit' => ['required' => false],
+            ],
+        ]);
+
+        register_rest_route(CWSB_NS, '/seller/product/subcategories/list', [
+            'methods' => 'POST',
+            'callback' => [self::class, 'list_product_subcategories'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args' => [
+                'category_id' => ['required' => true],
+                'include_empty' => ['required' => false],
                 'limit' => ['required' => false],
             ],
         ]);
@@ -112,13 +123,73 @@ class CWSB_Add_Product_Controller
         ]);
     }
 
+    public static function list_product_subcategories(WP_REST_Request $request)
+    {
+        $category_id = CWSB_Utils::normalize_text($request->get_param('category_id'));
+        if ($category_id === '') {
+            return CWSB_Response::error('invalid_request', 'category_id is required.', 422);
+        }
+
+        $parent_term = self::resolve_product_category_term($category_id, false);
+        if (!($parent_term instanceof WP_Term)) {
+            return CWSB_Response::ok([
+                'count' => 0,
+                'subcategories' => [],
+            ]);
+        }
+
+        $include_empty_param = $request->get_param('include_empty');
+        $include_empty = $include_empty_param === null ? false : CWSB_Utils::to_bool($include_empty_param);
+        $limit = (int) $request->get_param('limit');
+        if ($limit <= 0) {
+            $limit = 60;
+        }
+        $limit = min($limit, 120);
+
+        $terms = get_terms([
+            'taxonomy' => 'product_cat',
+            'hide_empty' => !$include_empty,
+            'orderby' => 'name',
+            'order' => 'ASC',
+            'number' => $limit,
+            'parent' => (int) $parent_term->term_id,
+        ]);
+
+        if (is_wp_error($terms)) {
+            return CWSB_Response::error('subcategory_fetch_failed', 'Unable to list product subcategories.', 500, [
+                'wp_error' => $terms->get_error_message(),
+            ]);
+        }
+
+        $subcategories = [];
+        foreach ((array) $terms as $term) {
+            if (!($term instanceof WP_Term)) {
+                continue;
+            }
+
+            $subcategories[] = [
+                'id' => (string) $term->slug,
+                'title' => (string) $term->name,
+                'description' => (string) $parent_term->name . ' > ' . (string) $term->name,
+                'parentId' => (string) $parent_term->slug,
+                'term_id' => (int) $term->term_id,
+                'count' => (int) $term->count,
+            ];
+        }
+
+        return CWSB_Response::ok([
+            'count' => count($subcategories),
+            'subcategories' => $subcategories,
+        ]);
+    }
+
     public static function convert_tnd_prices(WP_REST_Request $request)
     {
         $regular_tnd = self::to_positive_float($request->get_param('regular_tnd'));
         $promo_tnd = self::to_positive_float($request->get_param('promo_tnd'));
         $config = self::get_pricing_config();
 
-        $live = self::convert_tnd_to_eur_live($regular_tnd, $promo_tnd);
+        $live = self::convert_tnd_to_eur_live($regular_tnd, $promo_tnd, $config);
 
         if ($live !== null) {
             return CWSB_Response::ok([
@@ -211,111 +282,125 @@ class CWSB_Add_Product_Controller
         }
 
         try {
-            $wc_product = new WC_Product_Simple();
-
             $status = self::normalize_status(isset($product['status']) ? $product['status'] : 'draft');
-            $wc_product->set_name($name);
-            $wc_product->set_status($status);
-
             $sku = CWSB_Utils::normalize_text(isset($product['sku']) ? $product['sku'] : '');
-            if ($sku !== '') {
-                $wc_product->set_sku($sku);
-            }
-
             $short_description = CWSB_Utils::normalize_text(isset($product['short_description']) ? $product['short_description'] : '');
-            if ($short_description !== '') {
-                $wc_product->set_short_description($short_description);
+            $description = CWSB_Utils::normalize_text(isset($product['description']) ? $product['description'] : '');
+
+            $postarr = [
+                'post_type' => 'product',
+                'post_status' => $status,
+                'post_title' => $name,
+                'post_content' => $description,
+                'post_excerpt' => $short_description,
+                'post_author' => $seller_user_id,
+            ];
+
+            $product_id = wp_insert_post($postarr, true);
+            if (is_wp_error($product_id) || (int) $product_id <= 0) {
+                return CWSB_Response::error('create_failed', 'Unable to create product post.', 500, [
+                    'wp_error' => is_wp_error($product_id) ? $product_id->get_error_message() : '',
+                ]);
             }
 
-            $description = CWSB_Utils::normalize_text(isset($product['description']) ? $product['description'] : '');
-            if ($description !== '') {
-                $wc_product->set_description($description);
+            $product_id = (int) $product_id;
+
+            // Manual Woo data mapping instead of WC_Product_Simple CRUD object.
+            wp_set_object_terms($product_id, 'simple', 'product_type');
+
+            if ($sku !== '') {
+                update_post_meta($product_id, '_sku', $sku);
             }
 
             $regular_eur = self::to_price_string(isset($pricing['regular_eur']) ? $pricing['regular_eur'] : null);
             $promo_eur = self::to_price_string(isset($pricing['promo_eur']) ? $pricing['promo_eur'] : null);
             if ($regular_eur !== '') {
-                $wc_product->set_regular_price($regular_eur);
+                update_post_meta($product_id, '_regular_price', $regular_eur);
             }
             if ($promo_eur !== '' && (float) $promo_eur > 0) {
-                $wc_product->set_sale_price($promo_eur);
+                update_post_meta($product_id, '_sale_price', $promo_eur);
+                update_post_meta($product_id, '_price', $promo_eur);
+            } elseif ($regular_eur !== '') {
+                update_post_meta($product_id, '_price', $regular_eur);
             }
 
             $quantity = isset($product['quantity']) ? (int) $product['quantity'] : 0;
             if ($quantity > 0) {
-                $wc_product->set_manage_stock(true);
-                $wc_product->set_stock_quantity($quantity);
-                $wc_product->set_stock_status('instock');
+                update_post_meta($product_id, '_manage_stock', 'yes');
+                update_post_meta($product_id, '_stock', (string) $quantity);
+                update_post_meta($product_id, '_stock_status', 'instock');
+            } else {
+                update_post_meta($product_id, '_manage_stock', 'no');
+                update_post_meta($product_id, '_stock_status', 'instock');
             }
 
             $dimensions = isset($product['dimensions']) && is_array($product['dimensions']) ? $product['dimensions'] : [];
-            if (isset($dimensions['longueur'])) {
-                $wc_product->set_length(self::to_dimension_string($dimensions['longueur']));
-            }
-            if (isset($dimensions['largeur'])) {
-                $wc_product->set_width(self::to_dimension_string($dimensions['largeur']));
-            }
-            if (isset($dimensions['profondeur'])) {
-                $wc_product->set_height(self::to_dimension_string($dimensions['profondeur']));
-            }
+            $length = isset($dimensions['longueur']) ? self::to_dimension_string($dimensions['longueur']) : '';
+            $width = isset($dimensions['largeur']) ? self::to_dimension_string($dimensions['largeur']) : '';
+            $height = isset($dimensions['profondeur']) ? self::to_dimension_string($dimensions['profondeur']) : '';
+            update_post_meta($product_id, '_length', $length);
+            update_post_meta($product_id, '_width', $width);
+            update_post_meta($product_id, '_height', $height);
 
             $weight = isset($product['weight']) && is_array($product['weight']) ? $product['weight'] : [];
-            if (isset($weight['value'])) {
-                $wc_product->set_weight(self::to_dimension_string($weight['value']));
-            }
+            $weight_value = isset($weight['value']) ? self::to_dimension_string($weight['value']) : '';
+            update_post_meta($product_id, '_weight', $weight_value);
 
             $category_id = CWSB_Utils::normalize_text(isset($product['category_id']) ? $product['category_id'] : '');
-            $category_term_ids = self::resolve_product_category_term_ids($category_id);
-            if (!empty($category_term_ids)) {
-                $wc_product->set_category_ids($category_term_ids);
+            $subcategory_id = CWSB_Utils::normalize_text(isset($product['subcategory_id']) ? $product['subcategory_id'] : '');
+            $category_term_ids = self::resolve_product_category_term_ids($category_id, $subcategory_id);
+            if (empty($category_term_ids)) {
+                wp_delete_post($product_id, true);
+                return CWSB_Response::error('invalid_category', 'Unable to resolve category/subcategory mapping.', 422);
             }
-
-            $product_id = $wc_product->save();
-            if ((int) $product_id <= 0) {
-                return CWSB_Response::error('create_failed', 'WooCommerce returned an invalid product id.', 500);
-            }
-
-            // Ensure ownership aligns with vendor context from flow token.
-            wp_update_post([
-                'ID' => (int) $product_id,
-                'post_author' => $seller_user_id,
-            ]);
+            wp_set_object_terms($product_id, array_map('intval', $category_term_ids), 'product_cat');
 
             if ($idempotency_key !== '') {
-                update_post_meta((int) $product_id, '_cwsb_idempotency_key', $idempotency_key);
+                update_post_meta($product_id, '_cwsb_idempotency_key', $idempotency_key);
             }
 
             $regular_tnd = self::to_price_string(isset($pricing['regular_tnd']) ? $pricing['regular_tnd'] : null);
             $promo_tnd = self::to_price_string(isset($pricing['promo_tnd']) ? $pricing['promo_tnd'] : null);
             if ($regular_tnd !== '') {
-                update_post_meta((int) $product_id, '_regular_price_tnd', $regular_tnd);
-                update_post_meta((int) $product_id, '_price_tnd', $promo_tnd !== '' ? $promo_tnd : $regular_tnd);
+                update_post_meta($product_id, '_regular_price_tnd', $regular_tnd);
+                update_post_meta($product_id, '_price_tnd', $promo_tnd !== '' ? $promo_tnd : $regular_tnd);
             }
             if ($promo_tnd !== '') {
-                update_post_meta((int) $product_id, '_sale_price_tnd', $promo_tnd);
+                update_post_meta($product_id, '_sale_price_tnd', $promo_tnd);
             }
 
             $attributes = isset($product['attributes']) && is_array($product['attributes']) ? $product['attributes'] : [];
             $color = CWSB_Utils::normalize_text(isset($attributes['couleur']) ? $attributes['couleur'] : '');
             $size = CWSB_Utils::normalize_text(isset($attributes['taille']) ? $attributes['taille'] : '');
             if ($color !== '') {
-                update_post_meta((int) $product_id, '_cwsb_color', $color);
+                update_post_meta($product_id, '_cwsb_color', $color);
             }
             if ($size !== '') {
-                update_post_meta((int) $product_id, '_cwsb_size', $size);
+                update_post_meta($product_id, '_cwsb_size', $size);
+            }
+
+            $category_label = CWSB_Utils::normalize_text(isset($product['category_label']) ? $product['category_label'] : '');
+            $subcategory_label = CWSB_Utils::normalize_text(isset($product['subcategory_label']) ? $product['subcategory_label'] : '');
+            if ($category_label !== '') {
+                update_post_meta($product_id, '_cwsb_category_label', $category_label);
+            }
+            if ($subcategory_label !== '') {
+                update_post_meta($product_id, '_cwsb_subcategory_label', $subcategory_label);
             }
 
             $image_ids = self::save_images_for_product($product_id, isset($product['images_base64']) ? $product['images_base64'] : []);
             if (!empty($image_ids)) {
-                set_post_thumbnail((int) $product_id, (int) $image_ids[0]);
+                set_post_thumbnail($product_id, (int) $image_ids[0]);
                 if (count($image_ids) > 1) {
                     $gallery_ids = array_slice($image_ids, 1);
-                    update_post_meta((int) $product_id, '_product_image_gallery', implode(',', $gallery_ids));
+                    update_post_meta($product_id, '_product_image_gallery', implode(',', $gallery_ids));
                 }
             }
 
-            clean_post_cache((int) $product_id);
-            wc_delete_product_transients((int) $product_id);
+            clean_post_cache($product_id);
+            if (function_exists('wc_delete_product_transients')) {
+                wc_delete_product_transients($product_id);
+            }
 
             return CWSB_Response::ok([
                 'product_id' => (string) $product_id,
@@ -375,7 +460,7 @@ class CWSB_Add_Product_Controller
         return round($eur, $rounding_decimals);
     }
 
-    private static function convert_tnd_to_eur_live($regular_tnd, $promo_tnd)
+    private static function convert_tnd_to_eur_live($regular_tnd, $promo_tnd, $config = [])
     {
         if (!function_exists('wmc_get_price')) {
             return null;
@@ -422,11 +507,16 @@ class CWSB_Add_Product_Controller
 
             $eur_decimals = isset($currencies['EUR']['decimals']) ? absint($currencies['EUR']['decimals']) : 2;
             $eur_decimals = max(0, min($eur_decimals, 4));
+            $fixed_markup = isset($config['fixed_markup_eur']) ? (float) $config['fixed_markup_eur'] : 9;
 
             // CURCY rates are indexed against store base currency.
             // For TND -> EUR we use: amount * (rate_EUR / rate_TND).
-            $regular_eur = $regular_tnd > 0 ? round($regular_tnd * $eur_per_tnd, $eur_decimals) : 0;
-            $promo_eur = $promo_tnd > 0 ? round($promo_tnd * $eur_per_tnd, $eur_decimals) : 0;
+            $regular_eur = $regular_tnd > 0
+                ? round(($regular_tnd * $eur_per_tnd) + $fixed_markup, $eur_decimals)
+                : 0;
+            $promo_eur = $promo_tnd > 0
+                ? round(($promo_tnd * $eur_per_tnd) + $fixed_markup, $eur_decimals)
+                : 0;
 
             return [
                 'regular_eur' => $regular_eur,
@@ -477,19 +567,19 @@ class CWSB_Add_Product_Controller
         return wc_format_decimal($num, 3);
     }
 
-    private static function resolve_product_category_term_ids($category_id)
+    private static function resolve_product_category_term($value, $create_if_missing = false, $parent_id = 0)
     {
-        $value = CWSB_Utils::normalize_text($category_id);
+        $value = CWSB_Utils::normalize_text($value);
         if ($value === '') {
-            return [];
+            return null;
         }
 
         $taxonomy = 'product_cat';
 
         if (ctype_digit($value)) {
             $term = get_term((int) $value, $taxonomy);
-            if ($term && !is_wp_error($term)) {
-                return [(int) $term->term_id];
+            if ($term instanceof WP_Term && !is_wp_error($term)) {
+                return $term;
             }
         }
 
@@ -500,14 +590,54 @@ class CWSB_Add_Product_Controller
         }
 
         if (!$term || is_wp_error($term)) {
-            $inserted = wp_insert_term(ucwords(str_replace(['-', '_'], ' ', $value)), $taxonomy, ['slug' => $slug]);
-            if (is_wp_error($inserted) || !isset($inserted['term_id'])) {
-                return [];
+            if (!$create_if_missing) {
+                return null;
             }
-            return [(int) $inserted['term_id']];
+
+            $insert_args = ['slug' => $slug];
+            if ((int) $parent_id > 0) {
+                $insert_args['parent'] = (int) $parent_id;
+            }
+
+            $inserted = wp_insert_term(ucwords(str_replace(['-', '_'], ' ', $value)), $taxonomy, $insert_args);
+            if (is_wp_error($inserted) || !isset($inserted['term_id'])) {
+                return null;
+            }
+            $created = get_term((int) $inserted['term_id'], $taxonomy);
+            return $created instanceof WP_Term ? $created : null;
         }
 
-        return [(int) $term->term_id];
+        return $term instanceof WP_Term ? $term : null;
+    }
+
+    private static function resolve_product_category_term_ids($category_id, $subcategory_id = '')
+    {
+        $category_term = self::resolve_product_category_term($category_id, true);
+        if (!($category_term instanceof WP_Term)) {
+            return [];
+        }
+
+        $term_ids = [(int) $category_term->term_id];
+        $subcategory_value = CWSB_Utils::normalize_text($subcategory_id);
+        if ($subcategory_value === '') {
+            return $term_ids;
+        }
+
+        $subcategory_term = self::resolve_product_category_term(
+            $subcategory_value,
+            true,
+            (int) $category_term->term_id
+        );
+        if (!($subcategory_term instanceof WP_Term)) {
+            return $term_ids;
+        }
+
+        if ((int) $subcategory_term->parent > 0 && (int) $subcategory_term->parent !== (int) $category_term->term_id) {
+            return [];
+        }
+
+        $term_ids[] = (int) $subcategory_term->term_id;
+        return array_values(array_unique(array_map('intval', $term_ids)));
     }
 
     private static function save_images_for_product($product_id, $images_base64)

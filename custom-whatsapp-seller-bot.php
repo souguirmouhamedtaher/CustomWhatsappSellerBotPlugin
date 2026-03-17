@@ -54,14 +54,23 @@ function cwsb_create_tables()
     dbDelta($sql);
 }
 
-require_once CWSB_PLUGIN_DIR . 'includes/class-cwsb-response.php';
-require_once CWSB_PLUGIN_DIR . 'includes/class-cwsb-cache.php';
-require_once CWSB_PLUGIN_DIR . 'includes/class-cwsb-utils.php';
-require_once CWSB_PLUGIN_DIR . 'includes/class-cwsb-seller-repository.php';
-require_once CWSB_PLUGIN_DIR . 'includes/class-cwsb-order-repository.php';
-require_once CWSB_PLUGIN_DIR . 'includes/class-cwsb-auth-middleware.php';
-require_once CWSB_PLUGIN_DIR . 'includes/class-cwsb-auth-controller.php';
-require_once CWSB_PLUGIN_DIR . 'includes/class-cwsb-add-product-controller.php';
+// Load plugin classes grouped by role for easier maintenance.
+$cwsb_class_files = [
+    'includes/utilities/class-cwsb-response.php',
+    'includes/utilities/class-cwsb-cache.php',
+    'includes/utilities/class-cwsb-utils.php',
+    'includes/middleware/class-cwsb-auth-middleware.php',
+    'includes/repositories/class-cwsb-seller-repository.php',
+    'includes/repositories/class-cwsb-order-repository.php',
+    'includes/repositories/class-cwsb-product-repository.php',
+    'includes/services/class-cwsb-pin-service.php',
+    'includes/controllers/class-cwsb-auth-controller.php',
+    'includes/controllers/class-cwsb-add-product-controller.php',
+];
+
+foreach ($cwsb_class_files as $cwsb_relative_path) {
+    require_once CWSB_PLUGIN_DIR . $cwsb_relative_path;
+}
 
 // Ensure state table exists before first API call.
 register_activation_hook(__FILE__, 'cwsb_create_tables');

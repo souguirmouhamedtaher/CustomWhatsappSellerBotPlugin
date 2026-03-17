@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 if (!class_exists('CWSB_Cache')) {
-    require_once __DIR__ . '/class-cwsb-cache.php';
+    require_once __DIR__ . '/../utilities/class-cwsb-cache.php';
 }
 
 if (!class_exists('CWSB_Seller_Repository')) {
@@ -13,7 +13,7 @@ if (!class_exists('CWSB_Seller_Repository')) {
 }
 
 if (!class_exists('CWSB_Utils')) {
-    require_once __DIR__ . '/class-cwsb-utils.php';
+    require_once __DIR__ . '/../utilities/class-cwsb-utils.php';
 }
 
 /**
