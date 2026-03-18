@@ -66,6 +66,7 @@ $cwsb_class_files = [
     'includes/services/class-cwsb-pin-service.php',
     'includes/controllers/class-cwsb-auth-controller.php',
     'includes/controllers/class-cwsb-add-product-controller.php',
+    'includes/controllers/class-cwsb-update-product-controller.php',
 ];
 
 foreach ($cwsb_class_files as $cwsb_relative_path) {
@@ -77,3 +78,4 @@ register_activation_hook(__FILE__, 'cwsb_create_tables');
 // Register REST endpoints under whatsapp-bot/v1.
 add_action('rest_api_init', ['CWSB_Auth_Controller', 'register_routes']);
 add_action('rest_api_init', ['CWSB_Add_Product_Controller', 'register_routes']);
+add_action('rest_api_init', ['CWSB_Update_Product_Controller', 'register_routes']);
