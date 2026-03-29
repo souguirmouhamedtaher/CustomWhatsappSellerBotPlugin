@@ -787,13 +787,17 @@ class CWSB_Add_Product_Controller
     {
         global $wpdb;
 
-        $prefix = strtoupper(CWSB_Utils::normalize_text($prefix));
-        if ($prefix === '' || $prefix === 'GEN') {
-            $prefix = 'CWSB';
+        $vendor = strtoupper(CWSB_Utils::normalize_text($prefix));
+        if ($vendor === '' || $vendor === 'GEN') {
+            $vendor = 'VENDOR';
         }
 
+        // Always brand SKUs with the CWSB- prefix so analysts can distinguish
+        // WhatsApp-flow products from products created via other channels.
+        $full_prefix = 'CWSB-' . $vendor;
+
         // Find the next sequence number for this seller+prefix combination
-        $pattern = $prefix . '-%';
+        $pattern = $full_prefix . '-%';
         $latest_sku = $wpdb->get_var($wpdb->prepare(
             "SELECT DISTINCT meta_value FROM {$wpdb->postmeta} pm
              INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
@@ -810,15 +814,15 @@ class CWSB_Add_Product_Controller
 
         $next_seq = 1;
         if ($latest_sku) {
-            // Extract sequence number from last SKU (e.g., "CWSB-TAHER-009" -> 9)
+            // Extract sequence number from last SKU (e.g., "CWSB-TV-009" -> 9)
             $parts = explode('-', (string)$latest_sku);
-            if (count($parts) >= 2) {
+            if (count($parts) >= 3) {
                 $last_num = (int)end($parts);
                 $next_seq = $last_num + 1;
             }
         }
 
-        return sprintf('%s-%03d', $prefix, $next_seq);
+        return sprintf('%s-%03d', $full_prefix, $next_seq);
     }
 }
 

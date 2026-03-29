@@ -164,7 +164,11 @@ class CWSB_Auth_Controller
             'methods' => 'POST',
             'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_order_articles_by_id'],
             'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args' => ['order_id' => ['required' => true]],
+            'args' => [
+                'order_id' => ['required' => true],
+                'page' => ['required' => false],
+                'limit' => ['required' => false],
+            ],
         ]);
 
         register_rest_route(CWSB_NS, '/cache/auth/warmup/get', [

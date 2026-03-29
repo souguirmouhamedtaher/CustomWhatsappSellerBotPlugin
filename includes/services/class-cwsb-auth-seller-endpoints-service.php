@@ -310,15 +310,31 @@ class CWSB_Auth_Seller_Endpoints_Service
     public static function get_seller_order_articles_by_id(WP_REST_Request $request)
     {
         $order_id = (string) $request->get_param('order_id');
+        $page = max(1, (int) $request->get_param('page'));
+        $limit = (int) $request->get_param('limit');
+        if ($limit <= 0) {
+            $limit = 3;
+        }
+        $limit = min($limit, 25);
 
         if (trim($order_id) === '') {
             return CWSB_Response::error('invalid_request', 'order_id is required.', 422);
         }
 
         $articles = CWSB_Order_Repository::find_order_articles_by_order_id($order_id);
+        $total = is_array($articles) ? count($articles) : 0;
+        $offset = ($page - 1) * $limit;
+        $paged_articles = is_array($articles) ? array_slice($articles, $offset, $limit) : [];
+        $has_more = ($offset + count($paged_articles)) < $total;
+
         return CWSB_Response::ok([
-            'count' => is_array($articles) ? count($articles) : 0,
-            'articles' => is_array($articles) ? $articles : [],
+            'count' => is_array($paged_articles) ? count($paged_articles) : 0,
+            'total' => (int) $total,
+            'page' => (int) $page,
+            'limit' => (int) $limit,
+            'has_more' => (bool) $has_more,
+            'next_page' => $has_more ? (int) ($page + 1) : null,
+            'articles' => is_array($paged_articles) ? $paged_articles : [],
         ]);
     }
 }

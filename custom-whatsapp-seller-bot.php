@@ -64,6 +64,8 @@ $cwsb_class_files = [
     'includes/repositories/class-cwsb-order-repository.php',
     'includes/repositories/class-cwsb-product-repository.php',
     'includes/services/class-cwsb-pin-service.php',
+    'includes/repositories/class-cwsb-update-product-repository.php',
+    'includes/services/class-cwsb-update-product-service.php',
     'includes/controllers/class-cwsb-auth-controller.php',
     'includes/controllers/class-cwsb-add-product-controller.php',
     'includes/controllers/class-cwsb-update-product-controller.php',
