@@ -5,12 +5,19 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * PIN utility service backed by user meta storage.
+ * PIN utility service backed by wp_cwsb_seller_state.code.
  */
 class CWSB_Pin_Service
 {
-    // User meta key used to store hashed seller PIN values.
-    private static $meta_key = 'cwsb_pin_code';
+    private static function state_table_name()
+    {
+        if (class_exists('CWSB_Seller_Read_Repository') && method_exists('CWSB_Seller_Read_Repository', 'state_table_name')) {
+            return CWSB_Seller_Read_Repository::state_table_name();
+        }
+
+        global $wpdb;
+        return $wpdb->prefix . 'cwsb_seller_state';
+    }
 
     /**
      * Checks whether PIN is exactly 4 digits.
@@ -25,13 +32,19 @@ class CWSB_Pin_Service
      */
     public static function has_pin_for_seller($seller_id)
     {
+        global $wpdb;
+
         $seller_id = (int) $seller_id;
         if ($seller_id <= 0) {
             return false;
         }
 
-        $value = get_user_meta($seller_id, self::$meta_key, true);
-        return is_string($value) && $value !== '';
+        $table = self::state_table_name();
+        $value = $wpdb->get_var(
+            $wpdb->prepare("SELECT code FROM {$table} WHERE user_id = %d LIMIT 1", $seller_id)
+        );
+
+        return is_string($value) && trim($value) !== '';
     }
 
     /**
@@ -39,13 +52,25 @@ class CWSB_Pin_Service
      */
     public static function setup_pin($seller_id, $pin)
     {
+        global $wpdb;
+
         $seller_id = (int) $seller_id;
         if ($seller_id <= 0 || !self::is_valid_pin($pin)) {
             return false;
         }
 
         $hash = wp_hash_password((string) $pin);
-        return update_user_meta($seller_id, self::$meta_key, $hash) !== false;
+        $table = self::state_table_name();
+
+        $updated = $wpdb->update(
+            $table,
+            ['code' => $hash],
+            ['user_id' => $seller_id],
+            ['%s'],
+            ['%d']
+        );
+
+        return $updated !== false && $updated > 0;
     }
 
     /**
@@ -53,12 +78,18 @@ class CWSB_Pin_Service
      */
     public static function verify_pin_for_seller($seller_id, $pin)
     {
+        global $wpdb;
+
         $seller_id = (int) $seller_id;
         if ($seller_id <= 0 || !self::is_valid_pin($pin)) {
             return false;
         }
 
-        $hash = get_user_meta($seller_id, self::$meta_key, true);
+        $table = self::state_table_name();
+        $hash = $wpdb->get_var(
+            $wpdb->prepare("SELECT code FROM {$table} WHERE user_id = %d LIMIT 1", $seller_id)
+        );
+
         if (!is_string($hash) || $hash === '') {
             return false;
         }

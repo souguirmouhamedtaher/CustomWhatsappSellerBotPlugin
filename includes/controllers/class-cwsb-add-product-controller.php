@@ -75,7 +75,7 @@ class CWSB_Add_Product_Controller
     public static function list_product_categories(WP_REST_Request $request)
     {
         $include_empty_param = $request->get_param('include_empty');
-        $include_empty = $include_empty_param === null ? false : CWSB_Utils::to_bool($include_empty_param);
+            $include_empty = $include_empty_param === null ? true : CWSB_Utils::to_bool($include_empty_param);
         $parent_only = $request->get_param('parent_only');
         $parent_only = $parent_only === null ? true : CWSB_Utils::to_bool($parent_only);
         $limit = (int) $request->get_param('limit');
@@ -139,7 +139,7 @@ class CWSB_Add_Product_Controller
         }
 
         $include_empty_param = $request->get_param('include_empty');
-        $include_empty = $include_empty_param === null ? false : CWSB_Utils::to_bool($include_empty_param);
+            $include_empty = $include_empty_param === null ? true : CWSB_Utils::to_bool($include_empty_param);
         $limit = (int) $request->get_param('limit');
         if ($limit <= 0) {
             $limit = 60;
