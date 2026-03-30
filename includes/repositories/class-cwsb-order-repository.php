@@ -185,9 +185,9 @@ class CWSB_Order_Repository
 
         $orders = [];
         foreach ($order_ids as $order_id) {
-            $order = self::get_wc_order_safe($order_id);
-            if ($order) {
-                $orders[] = self::map_order_summary($order);
+            $order = self::find_order_summary_by_id($order_id);
+            if (is_array($order)) {
+                $orders[] = $order;
             }
         }
 
@@ -264,9 +264,9 @@ class CWSB_Order_Repository
         $slice_ids = array_slice($matched_ids, $offset, $safe_limit);
         $orders = [];
         foreach ($slice_ids as $order_id) {
-            $order = self::get_wc_order_safe($order_id);
-            if ($order) {
-                $orders[] = self::map_order_summary($order);
+            $order = self::find_order_summary_by_id($order_id);
+            if (is_array($order)) {
+                $orders[] = $order;
             }
         }
 
@@ -307,68 +307,224 @@ class CWSB_Order_Repository
             return $cached;
         }
 
-        $order = self::get_wc_order_safe($oid);
-        if (!$order) {
+        $row = self::find_order_row_by_id($oid);
+        if (!is_array($row)) {
             CWSB_Cache::set($cache_key, null);
             return null;
         }
 
-        $mapped = self::map_order($order, false);
+        $mapped = self::map_order($row, false);
         CWSB_Cache::set($cache_key, $mapped);
         return $mapped;
     }
 
     public static function find_order_articles_by_order_id($order_id)
     {
-        $order = self::get_wc_order_safe($order_id);
-        if (!$order) {
+        $row = self::find_order_row_by_id($order_id);
+        if (!is_array($row)) {
             return [];
         }
 
-        return self::map_order_articles($order);
+        return self::map_order_articles($row);
     }
 
-    private static function get_wc_order_safe($order_id)
+    private static function find_order_summary_by_id($order_id)
     {
-        if (!function_exists('wc_get_order')) {
+        $row = self::find_order_row_by_id($order_id);
+        if (!is_array($row)) {
             return null;
         }
 
-        $order = wc_get_order((int) $order_id);
-        if (!$order || !is_a($order, 'WC_Order')) {
+        return self::map_order_summary($row);
+    }
+
+    private static function find_order_row_by_id($order_id)
+    {
+        global $wpdb;
+
+        $oid = (int) $order_id;
+        if ($oid <= 0) {
             return null;
         }
 
-        return $order;
+        $sql = "
+            SELECT
+                p.ID,
+                p.post_status,
+                p.post_date,
+                p.post_excerpt,
+                MAX(CASE WHEN pm.meta_key = '_order_number' THEN pm.meta_value END) AS order_number,
+                MAX(CASE WHEN pm.meta_key = '_customer_user' THEN pm.meta_value END) AS customer_user,
+                MAX(CASE WHEN pm.meta_key = '_order_total' THEN pm.meta_value END) AS order_total,
+                MAX(CASE WHEN pm.meta_key = '_order_currency' THEN pm.meta_value END) AS order_currency,
+                MAX(CASE WHEN pm.meta_key = '_payment_method_title' THEN pm.meta_value END) AS payment_method_title,
+                MAX(CASE WHEN pm.meta_key = '_transaction_id' THEN pm.meta_value END) AS transaction_id,
+                MAX(CASE WHEN pm.meta_key = '_customer_note' THEN pm.meta_value END) AS customer_note,
+                MAX(CASE WHEN pm.meta_key = '_order_shipping' THEN pm.meta_value END) AS order_shipping,
+                MAX(CASE WHEN pm.meta_key = '_shipping_total' THEN pm.meta_value END) AS shipping_total,
+                MAX(CASE WHEN pm.meta_key = '_billing_first_name' THEN pm.meta_value END) AS billing_first_name,
+                MAX(CASE WHEN pm.meta_key = '_billing_last_name' THEN pm.meta_value END) AS billing_last_name,
+                MAX(CASE WHEN pm.meta_key = '_billing_address_1' THEN pm.meta_value END) AS billing_address_1,
+                MAX(CASE WHEN pm.meta_key = '_billing_address_2' THEN pm.meta_value END) AS billing_address_2,
+                MAX(CASE WHEN pm.meta_key = '_billing_city' THEN pm.meta_value END) AS billing_city,
+                MAX(CASE WHEN pm.meta_key = '_billing_state' THEN pm.meta_value END) AS billing_state,
+                MAX(CASE WHEN pm.meta_key = '_billing_postcode' THEN pm.meta_value END) AS billing_postcode,
+                MAX(CASE WHEN pm.meta_key = '_billing_country' THEN pm.meta_value END) AS billing_country,
+                MAX(CASE WHEN pm.meta_key = '_shipping_first_name' THEN pm.meta_value END) AS shipping_first_name,
+                MAX(CASE WHEN pm.meta_key = '_shipping_last_name' THEN pm.meta_value END) AS shipping_last_name,
+                MAX(CASE WHEN pm.meta_key = '_shipping_address_1' THEN pm.meta_value END) AS shipping_address_1,
+                MAX(CASE WHEN pm.meta_key = '_shipping_address_2' THEN pm.meta_value END) AS shipping_address_2,
+                MAX(CASE WHEN pm.meta_key = '_shipping_city' THEN pm.meta_value END) AS shipping_city,
+                MAX(CASE WHEN pm.meta_key = '_shipping_state' THEN pm.meta_value END) AS shipping_state,
+                MAX(CASE WHEN pm.meta_key = '_shipping_postcode' THEN pm.meta_value END) AS shipping_postcode,
+                MAX(CASE WHEN pm.meta_key = '_shipping_country' THEN pm.meta_value END) AS shipping_country
+            FROM {$wpdb->posts} p
+            LEFT JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID
+            WHERE p.ID = %d
+              AND p.post_type = 'shop_order'
+              AND p.post_status NOT IN ('trash', 'auto-draft')
+            GROUP BY p.ID, p.post_status, p.post_date, p.post_excerpt
+            LIMIT 1
+        ";
+
+        $row = $wpdb->get_row($wpdb->prepare($sql, $oid), ARRAY_A);
+        return is_array($row) ? $row : null;
     }
 
-    private static function map_order_summary($order)
+    private static function find_order_article_rows($order_id)
     {
-        $status = self::map_order_status($order->get_status());
-        $articles_count = max(0, (int) $order->get_item_count('line_item'));
-        $customer_name = CWSB_Utils::normalize_text($order->get_formatted_billing_full_name());
+        global $wpdb;
+
+        $oid = (int) $order_id;
+        if ($oid <= 0) {
+            return [];
+        }
+
+        $order_items_table = $wpdb->prefix . 'woocommerce_order_items';
+        $order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
+
+        $sql = "
+            SELECT
+                oi.order_item_id,
+                oi.order_item_name,
+                MAX(CASE WHEN oim.meta_key = '_product_id' THEN oim.meta_value END) AS product_id,
+                MAX(CASE WHEN oim.meta_key = '_variation_id' THEN oim.meta_value END) AS variation_id,
+                MAX(CASE WHEN oim.meta_key = '_qty' THEN oim.meta_value END) AS quantity,
+                MAX(CASE WHEN oim.meta_key = '_line_total' THEN oim.meta_value END) AS line_total,
+                MAX(CASE WHEN oim.meta_key = '_line_subtotal' THEN oim.meta_value END) AS line_subtotal
+            FROM {$order_items_table} oi
+            LEFT JOIN {$order_itemmeta_table} oim ON oim.order_item_id = oi.order_item_id
+            WHERE oi.order_id = %d
+              AND oi.order_item_type = 'line_item'
+            GROUP BY oi.order_item_id, oi.order_item_name
+            ORDER BY oi.order_item_id ASC
+        ";
+
+        $rows = $wpdb->get_results($wpdb->prepare($sql, $oid), ARRAY_A);
+        return is_array($rows) ? $rows : [];
+    }
+
+    private static function summarize_order_article_rows($rows)
+    {
+        $articles_count = 0;
+        $subtotal = 0.0;
+
+        foreach ((array) $rows as $row) {
+            $quantity = max(0, (int) ($row['quantity'] ?? 0));
+            $articles_count += $quantity;
+
+            $line_subtotal = (float) ($row['line_subtotal'] ?? 0);
+            if ($line_subtotal <= 0) {
+                $line_subtotal = (float) ($row['line_total'] ?? 0);
+            }
+            $subtotal += $line_subtotal;
+        }
 
         return [
-            'id' => (string) $order->get_id(),
-            'reference' => CWSB_Utils::normalize_text('Commande #' . $order->get_order_number()),
-            'customer_name' => $customer_name !== '' ? $customer_name : ('Client #' . $order->get_customer_id()),
-            'created_at' => $order->get_date_created() ? $order->get_date_created()->date_i18n('d/m/Y H:i') : '',
-            'total' => (float) $order->get_total(),
-            'currency' => CWSB_Utils::normalize_text($order->get_currency()),
-            'status' => $status,
-            'tags' => [self::map_order_status_label($status)],
             'articles_count' => $articles_count,
+            'subtotal' => $subtotal,
         ];
     }
 
-    private static function map_order($order, $include_articles = false)
+    private static function compose_person_name($first_name, $last_name)
+    {
+        return CWSB_Utils::normalize_text(trim((string) $first_name . ' ' . (string) $last_name));
+    }
+
+    private static function format_order_created_at($post_date)
+    {
+        $date = trim((string) $post_date);
+        if ($date === '') {
+            return '';
+        }
+
+        return mysql2date('d/m/Y H:i', $date);
+    }
+
+    private static function build_order_reference($row)
+    {
+        $order_number = CWSB_Utils::normalize_text(isset($row['order_number']) ? $row['order_number'] : '');
+        if ($order_number === '') {
+            $order_number = (string) (isset($row['ID']) ? (int) $row['ID'] : 0);
+        }
+
+        return CWSB_Utils::normalize_text('Commande #' . $order_number);
+    }
+
+    private static function build_order_address_info($row, $prefix)
+    {
+        $name = self::compose_person_name(
+            isset($row[$prefix . '_first_name']) ? $row[$prefix . '_first_name'] : '',
+            isset($row[$prefix . '_last_name']) ? $row[$prefix . '_last_name'] : ''
+        );
+
+        $parts = [
+            $name,
+            CWSB_Utils::normalize_text(isset($row[$prefix . '_address_1']) ? $row[$prefix . '_address_1'] : ''),
+            CWSB_Utils::normalize_text(isset($row[$prefix . '_address_2']) ? $row[$prefix . '_address_2'] : ''),
+            CWSB_Utils::normalize_text(isset($row[$prefix . '_city']) ? $row[$prefix . '_city'] : ''),
+            CWSB_Utils::normalize_text(isset($row[$prefix . '_state']) ? $row[$prefix . '_state'] : ''),
+            CWSB_Utils::normalize_text(isset($row[$prefix . '_postcode']) ? $row[$prefix . '_postcode'] : ''),
+            CWSB_Utils::normalize_text(isset($row[$prefix . '_country']) ? $row[$prefix . '_country'] : ''),
+        ];
+
+        return CWSB_Utils::normalize_text(implode("\n", array_filter($parts)));
+    }
+
+    private static function map_order_summary($row)
+    {
+        $article_rows = self::find_order_article_rows(isset($row['ID']) ? (int) $row['ID'] : 0);
+        $metrics = self::summarize_order_article_rows($article_rows);
+        $status = self::map_order_status(isset($row['post_status']) ? $row['post_status'] : '');
+        $customer_name = self::compose_person_name(
+            isset($row['billing_first_name']) ? $row['billing_first_name'] : '',
+            isset($row['billing_last_name']) ? $row['billing_last_name'] : ''
+        );
+        $customer_id = (int) (isset($row['customer_user']) ? $row['customer_user'] : 0);
+
+        return [
+            'id' => (string) (isset($row['ID']) ? (int) $row['ID'] : 0),
+            'reference' => self::build_order_reference($row),
+            'customer_name' => $customer_name !== '' ? $customer_name : ('Client #' . $customer_id),
+            'created_at' => self::format_order_created_at(isset($row['post_date']) ? $row['post_date'] : ''),
+            'total' => (float) (isset($row['order_total']) ? $row['order_total'] : 0),
+            'currency' => CWSB_Utils::normalize_text(isset($row['order_currency']) ? $row['order_currency'] : ''),
+            'status' => $status,
+            'tags' => [self::map_order_status_label($status)],
+            'articles_count' => (int) $metrics['articles_count'],
+        ];
+    }
+
+    private static function map_order($row, $include_articles = false)
     {
         $articles = [];
-        $articles_count = max(0, (int) $order->get_item_count('line_item'));
-        $subtotal = (float) $order->get_subtotal();
+        $article_rows = self::find_order_article_rows(isset($row['ID']) ? (int) $row['ID'] : 0);
+        $metrics = self::summarize_order_article_rows($article_rows);
+        $articles_count = (int) $metrics['articles_count'];
+        $subtotal = (float) $metrics['subtotal'];
 
         if ($include_articles) {
-            $articles = self::map_order_articles($order);
+            $articles = self::map_order_articles($row);
             $articles_count = count($articles);
             $subtotal = 0.0;
             foreach ($articles as $article) {
@@ -376,78 +532,68 @@ class CWSB_Order_Repository
             }
         }
 
-        $status = self::map_order_status($order->get_status());
-        $customer_name = CWSB_Utils::normalize_text($order->get_formatted_billing_full_name());
-
-        $billing_parts = [
-            CWSB_Utils::normalize_text($order->get_formatted_billing_full_name()),
-            CWSB_Utils::normalize_text($order->get_billing_address_1()),
-            CWSB_Utils::normalize_text($order->get_billing_address_2()),
-            CWSB_Utils::normalize_text($order->get_billing_city()),
-            CWSB_Utils::normalize_text($order->get_billing_state()),
-            CWSB_Utils::normalize_text($order->get_billing_postcode()),
-            CWSB_Utils::normalize_text($order->get_billing_country()),
-        ];
-
-        $shipping_parts = [
-            CWSB_Utils::normalize_text($order->get_formatted_shipping_full_name()),
-            CWSB_Utils::normalize_text($order->get_shipping_address_1()),
-            CWSB_Utils::normalize_text($order->get_shipping_address_2()),
-            CWSB_Utils::normalize_text($order->get_shipping_city()),
-            CWSB_Utils::normalize_text($order->get_shipping_state()),
-            CWSB_Utils::normalize_text($order->get_shipping_postcode()),
-            CWSB_Utils::normalize_text($order->get_shipping_country()),
-        ];
+        $status = self::map_order_status(isset($row['post_status']) ? $row['post_status'] : '');
+        $customer_name = self::compose_person_name(
+            isset($row['billing_first_name']) ? $row['billing_first_name'] : '',
+            isset($row['billing_last_name']) ? $row['billing_last_name'] : ''
+        );
+        $customer_id = (int) (isset($row['customer_user']) ? $row['customer_user'] : 0);
 
         return [
-            'id' => (string) $order->get_id(),
-            'reference' => CWSB_Utils::normalize_text('Commande #' . $order->get_order_number()),
-            'customer_name' => $customer_name !== '' ? $customer_name : ('Client #' . $order->get_customer_id()),
-            'created_at' => $order->get_date_created() ? $order->get_date_created()->date_i18n('d/m/Y H:i') : '',
-            'total' => (float) $order->get_total(),
-            'currency' => CWSB_Utils::normalize_text($order->get_currency()),
+            'id' => (string) (isset($row['ID']) ? (int) $row['ID'] : 0),
+            'reference' => self::build_order_reference($row),
+            'customer_name' => $customer_name !== '' ? $customer_name : ('Client #' . $customer_id),
+            'created_at' => self::format_order_created_at(isset($row['post_date']) ? $row['post_date'] : ''),
+            'total' => (float) (isset($row['order_total']) ? $row['order_total'] : 0),
+            'currency' => CWSB_Utils::normalize_text(isset($row['order_currency']) ? $row['order_currency'] : ''),
             'status' => $status,
             'tags' => [self::map_order_status_label($status)],
             'articles_count' => $articles_count,
-            'payment_method' => CWSB_Utils::normalize_text($order->get_payment_method_title()),
-            'transaction_id' => CWSB_Utils::normalize_text($order->get_transaction_id()),
-            'customer_note' => CWSB_Utils::normalize_text($order->get_customer_note()),
+            'payment_method' => CWSB_Utils::normalize_text(isset($row['payment_method_title']) ? $row['payment_method_title'] : ''),
+            'transaction_id' => CWSB_Utils::normalize_text(isset($row['transaction_id']) ? $row['transaction_id'] : ''),
+            'customer_note' => CWSB_Utils::normalize_text(isset($row['customer_note']) && $row['customer_note'] !== '' ? $row['customer_note'] : (isset($row['post_excerpt']) ? $row['post_excerpt'] : '')),
             'articles' => $articles,
-            'billing_info' => CWSB_Utils::normalize_text(implode("\n", array_filter($billing_parts))),
-            'shipping_info' => CWSB_Utils::normalize_text(implode("\n", array_filter($shipping_parts))),
+            'billing_info' => self::build_order_address_info($row, 'billing'),
+            'shipping_info' => self::build_order_address_info($row, 'shipping'),
             'subtotal' => (float) $subtotal,
-            'shipping_cost' => (float) $order->get_shipping_total(),
+            'shipping_cost' => (float) (isset($row['order_shipping']) && $row['order_shipping'] !== '' ? $row['order_shipping'] : (isset($row['shipping_total']) ? $row['shipping_total'] : 0)),
         ];
     }
 
-    private static function map_order_articles($order)
+    private static function map_order_articles($row)
     {
-        $items = $order->get_items('line_item');
         $articles = [];
+        $currency = CWSB_Utils::normalize_text(isset($row['order_currency']) ? $row['order_currency'] : '');
+        $item_rows = self::find_order_article_rows(isset($row['ID']) ? (int) $row['ID'] : 0);
 
-        foreach ((array) $items as $item_id => $item) {
-            $product = $item->get_product();
-            $product_id = $product ? (int) $product->get_id() : 0;
+        foreach ((array) $item_rows as $item) {
+            $product_id = (int) ($item['product_id'] ?? 0);
+            $variation_id = (int) ($item['variation_id'] ?? 0);
+            $effective_product_id = $variation_id > 0 ? $variation_id : $product_id;
 
             $image_url = '';
-            if ($product && method_exists($product, 'get_image_id')) {
-                $image_id = (int) $product->get_image_id();
+            if ($effective_product_id > 0) {
+                $image_id = (int) get_post_meta($effective_product_id, '_thumbnail_id', true);
+                if ($image_id <= 0 && $product_id > 0) {
+                    $image_id = (int) get_post_meta($product_id, '_thumbnail_id', true);
+                }
                 if ($image_id > 0) {
                     $image_url = (string) wp_get_attachment_image_url($image_id, 'medium');
                 }
             }
 
-            $qty = (int) $item->get_quantity();
-            $line_total = (float) $item->get_total();
+            $item_id = (int) ($item['order_item_id'] ?? 0);
+            $qty = max(0, (int) ($item['quantity'] ?? 0));
+            $line_total = (float) ($item['line_total'] ?? 0);
             $unit_price = $qty > 0 ? ($line_total / $qty) : 0.0;
 
             $articles[] = [
-                'id' => (string) ($product_id > 0 ? $product_id : (int) $item_id),
-                'name' => CWSB_Utils::normalize_text($item->get_name()),
-                'sku' => CWSB_Utils::normalize_text($product ? $product->get_sku() : ''),
+                'id' => (string) ($effective_product_id > 0 ? $effective_product_id : $item_id),
+                'name' => CWSB_Utils::normalize_text(isset($item['order_item_name']) ? $item['order_item_name'] : ''),
+                'sku' => CWSB_Utils::normalize_text($effective_product_id > 0 ? get_post_meta($effective_product_id, '_sku', true) : ''),
                 'quantity' => $qty,
                 'price' => (float) $unit_price,
-                'currency' => CWSB_Utils::normalize_text($order->get_currency()),
+                'currency' => $currency,
                 'image' => CWSB_Utils::normalize_text($image_url),
             ];
         }

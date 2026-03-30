@@ -257,24 +257,13 @@ class CWSB_Product_Repository
             return null;
         }
 
-        $variation = function_exists('wc_get_product') ? wc_get_product($vid) : null;
-        if (!$variation || !is_a($variation, 'WC_Product_Variation')) {
-            return null;
-        }
-
-        // Prefer variation image; when missing, reuse parent product image.
         $parent_image_src = '';
-        if (function_exists('wc_get_product')) {
-            $parent_product = wc_get_product($pid);
-            if ($parent_product && is_a($parent_product, 'WC_Product')) {
-                $parent_image_id = (int) $parent_product->get_image_id();
-                if ($parent_image_id > 0) {
-                    $parent_image_src = (string) wp_get_attachment_image_url($parent_image_id, 'full');
-                }
-            }
+        $parent_image_id = (int) get_post_meta($pid, '_thumbnail_id', true);
+        if ($parent_image_id > 0) {
+            $parent_image_src = (string) wp_get_attachment_image_url($parent_image_id, 'full');
         }
 
-        return self::map_variation($variation, $parent_image_src);
+        return self::map_variation_by_post_id($vid, $parent_image_src);
     }
 
     private static function map_product_detail_by_sql($product_id)
@@ -513,74 +502,7 @@ class CWSB_Product_Repository
 
     private static function map_product($product_id)
     {
-        if (!function_exists('wc_get_product')) {
-            return self::map_post_product_fallback((int) $product_id);
-        }
-
-        $wc_product = wc_get_product((int) $product_id);
-        if (!$wc_product) {
-            return self::map_post_product_fallback((int) $product_id);
-        }
-
-        $is_variable = is_a($wc_product, 'WC_Product_Variable');
-
-        $created = $wc_product->get_date_created();
-        $created_at = $created ? $created->date_i18n('d/m/Y') : '';
-
-        $image_src = '';
-        $image_id = (int) $wc_product->get_image_id();
-        if ($image_id > 0) {
-            $image_src = (string) wp_get_attachment_image_url($image_id, 'full');
-        }
-        $image_gallery = self::build_wc_product_gallery_urls($wc_product, $image_src);
-
-        $categories = function_exists('wc_get_product_terms')
-            ? wc_get_product_terms($wc_product->get_id(), 'product_cat', ['fields' => 'names'])
-            : [];
-        $tags = function_exists('wc_get_product_terms')
-            ? wc_get_product_terms($wc_product->get_id(), 'product_tag', ['fields' => 'names'])
-            : [];
-
-        $general_price_euro = CWSB_Utils::to_money_string($wc_product->get_regular_price());
-        $promo_price_euro = CWSB_Utils::to_money_string($wc_product->get_sale_price());
-
-        $general_price_tnd = CWSB_Utils::to_money_string(get_post_meta($wc_product->get_id(), '_regular_price_tnd', true));
-        $promo_price_tnd = CWSB_Utils::to_money_string(get_post_meta($wc_product->get_id(), '_sale_price_tnd', true));
-
-        $result = [
-            'id' => (string) $wc_product->get_id(),
-            'name' => (string) $wc_product->get_name(),
-            'type' => $is_variable ? 'variable' : 'simple',
-            'sku' => (string) $wc_product->get_sku(),
-            'image_src' => $image_src,
-            'image_gallery' => $image_gallery,
-            'created_at' => $created_at,
-            'short_description' => (string) $wc_product->get_short_description(),
-            'full_description' => (string) $wc_product->get_description(),
-            'categories' => is_array($categories) ? array_values($categories) : [],
-            'tags' => is_array($tags) ? array_values($tags) : [],
-            'general_price_euro' => $general_price_euro,
-            'general_price_tnd' => $general_price_tnd,
-            'promo_price_euro' => $promo_price_euro,
-            'promo_price_tnd' => $promo_price_tnd,
-            'stock_quantity' => CWSB_Utils::to_int_or_zero($wc_product->get_stock_quantity()),
-            'manage_stock' => (bool) $wc_product->managing_stock(),
-            'is_variable' => $is_variable,
-        ];
-
-        if ($is_variable && is_a($wc_product, 'WC_Product_Variable')) {
-            $variations = [];
-            $children = $wc_product->get_children();
-            foreach ((array) $children as $child_id) {
-                $variation = wc_get_product((int) $child_id);
-                if ($variation && is_a($variation, 'WC_Product_Variation')) {
-                    $variations[] = self::map_variation($variation, $image_src);
-                }
-            }
-            $result['variations'] = $variations;
-        }
-
-        return $result;
+        return self::map_product_detail_by_sql((int) $product_id);
     }
 
     private static function map_post_product_fallback($product_id)
@@ -622,37 +544,52 @@ class CWSB_Product_Repository
 
     private static function map_variation($variation, $parent_image_src = '')
     {
+        $variation_id = 0;
+        if (is_numeric($variation)) {
+            $variation_id = (int) $variation;
+        } elseif (is_object($variation) && method_exists($variation, 'get_id')) {
+            $variation_id = (int) $variation->get_id();
+        }
+
+        return self::map_variation_by_post_id($variation_id, $parent_image_src);
+    }
+
+    private static function map_variation_by_post_id($variation_id, $parent_image_src = '')
+    {
+        $vid = (int) $variation_id;
+        if ($vid <= 0) {
+            return null;
+        }
+
+        $variation_post = get_post($vid);
+        if (!$variation_post || $variation_post->post_type !== 'product_variation') {
+            return null;
+        }
+
         $image_src = '';
-        $image_id = (int) $variation->get_image_id();
+        $image_id = (int) get_post_meta($vid, '_thumbnail_id', true);
         if ($image_id > 0) {
             $image_src = (string) wp_get_attachment_image_url($image_id, 'full');
         } elseif (is_string($parent_image_src) && $parent_image_src !== '') {
-            // Keep API output consistent: never leave variation image empty if parent has one.
             $image_src = $parent_image_src;
         }
 
-        $attributes = [];
-        foreach ((array) $variation->get_attributes() as $key => $value) {
-            $normalized_key = strtolower((string) $key);
-            $normalized_key = preg_replace('/^attribute_/', '', $normalized_key);
-            $normalized_key = preg_replace('/^pa_/', '', $normalized_key);
-            $attributes[$normalized_key] = is_string($value) ? $value : '';
-        }
-
-        if (!isset($attributes['weight']) && $variation->get_weight() !== '') {
-            $attributes['weight'] = (string) $variation->get_weight();
+        $attributes = self::find_variation_attributes_sql($vid);
+        $weight = trim((string) get_post_meta($vid, '_weight', true));
+        if (!isset($attributes['weight']) && $weight !== '') {
+            $attributes['weight'] = $weight;
         }
 
         return [
-            'id' => (string) $variation->get_id(),
-            'sku' => (string) $variation->get_sku(),
-            'title' => (string) $variation->get_name(),
-            'stock' => CWSB_Utils::to_int_or_zero($variation->get_stock_quantity()),
-            'stock_status' => (string) $variation->get_stock_status(),
-            'manage_stock' => (bool) $variation->managing_stock(),
+            'id' => (string) $vid,
+            'sku' => (string) get_post_meta($vid, '_sku', true),
+            'title' => (string) $variation_post->post_title,
+            'stock' => CWSB_Utils::to_int_or_zero(get_post_meta($vid, '_stock', true)),
+            'stock_status' => (string) get_post_meta($vid, '_stock_status', true),
+            'manage_stock' => ((string) get_post_meta($vid, '_manage_stock', true)) === 'yes',
             'attributes' => $attributes,
-            'price_euro' => CWSB_Utils::to_money_string($variation->get_price()),
-            'price_tnd' => CWSB_Utils::to_money_string(get_post_meta($variation->get_id(), '_price_tnd', true)),
+            'price_euro' => CWSB_Utils::to_money_string(get_post_meta($vid, '_price', true)),
+            'price_tnd' => CWSB_Utils::to_money_string(get_post_meta($vid, '_price_tnd', true)),
             'image_src' => $image_src,
         ];
     }
@@ -685,31 +622,17 @@ class CWSB_Product_Repository
         return array_slice(array_values(array_unique($urls)), 0, (int) self::MAX_CAROUSEL_IMAGES);
     }
 
-    private static function build_wc_product_gallery_urls($wc_product, $primary_image_src)
+    private static function build_product_gallery_urls_from_meta($product_ref, $primary_image_src)
     {
-        $urls = [];
-
-        $primary = trim((string) $primary_image_src);
-        if ($primary !== '') {
-            $urls[] = $primary;
+        $product_id = 0;
+        if (is_numeric($product_ref)) {
+            $product_id = (int) $product_ref;
+        } elseif (is_object($product_ref) && method_exists($product_ref, 'get_id')) {
+            $product_id = (int) $product_ref->get_id();
         }
 
-        if (!$wc_product || !method_exists($wc_product, 'get_gallery_image_ids')) {
-            return array_values(array_unique($urls));
-        }
-
-        foreach ((array) $wc_product->get_gallery_image_ids() as $id) {
-            $aid = (int) $id;
-            if ($aid <= 0) {
-                continue;
-            }
-            $url = (string) wp_get_attachment_image_url($aid, 'full');
-            if ($url !== '') {
-                $urls[] = $url;
-            }
-        }
-
-        return array_slice(array_values(array_unique($urls)), 0, (int) self::MAX_CAROUSEL_IMAGES);
+        $gallery_ids_csv = $product_id > 0 ? (string) get_post_meta($product_id, '_product_image_gallery', true) : '';
+        return self::build_image_gallery_urls($primary_image_src, $gallery_ids_csv);
     }
 
     private static function find_state_user_id_by_flow_token($flow_token)

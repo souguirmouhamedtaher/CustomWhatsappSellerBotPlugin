@@ -432,9 +432,6 @@ class CWSB_Update_Product_Repository
 
         // Invalidate caches
         clean_post_cache($product_id);
-        if (function_exists('wc_delete_product_transients')) {
-            wc_delete_product_transients($product_id);
-        }
 
         if (class_exists('CWSB_Product_Repository') && class_exists('CWSB_Seller_Read_Repository')) {
             $vendor = CWSB_Seller_Read_Repository::find_vendor_by_user_id($seller_user_id);

@@ -217,10 +217,6 @@ class CWSB_Add_Product_Controller
 
     public static function create_product_by_flow_token(WP_REST_Request $request)
     {
-        if (!function_exists('wc_get_product')) {
-            return CWSB_Response::error('woocommerce_missing', 'WooCommerce is not available.', 500);
-        }
-
         $flow_token = CWSB_Utils::normalize_text($request->get_param('flow_token'));
         $raw_product = $request->get_param('product');
         $product = is_array($raw_product) ? $raw_product : [];
@@ -307,7 +303,7 @@ class CWSB_Add_Product_Controller
 
             $product_id = (int) $product_id;
 
-            // Manual Woo data mapping instead of WC_Product_Simple CRUD object.
+            // Manual product post/meta mapping using WordPress core writes only.
             wp_set_object_terms($product_id, 'simple', 'product_type');
 
             // Auto-generate SKU if requested
@@ -405,9 +401,6 @@ class CWSB_Add_Product_Controller
             }
 
             clean_post_cache($product_id);
-            if (function_exists('wc_delete_product_transients')) {
-                wc_delete_product_transients($product_id);
-            }
 
             return CWSB_Response::ok([
                 'product_id' => (string) $product_id,
@@ -516,8 +509,6 @@ class CWSB_Add_Product_Controller
             $eur_decimals = max(0, min($eur_decimals, 4));
             $fixed_markup = isset($config['fixed_markup_eur']) ? (float) $config['fixed_markup_eur'] : 9;
 
-            // CURCY rates are indexed against store base currency.
-            // For TND -> EUR we use: amount * (rate_EUR / rate_TND).
             $regular_eur = $regular_tnd > 0
                 ? round(($regular_tnd * $eur_per_tnd) + $fixed_markup, $eur_decimals)
                 : 0;
@@ -546,7 +537,7 @@ class CWSB_Add_Product_Controller
         if ($num <= 0) {
             return '';
         }
-        return wc_format_decimal($num, wc_get_price_decimals());
+        return self::format_decimal_string($num, 2);
     }
 
     private static function to_positive_float($value)
@@ -571,7 +562,18 @@ class CWSB_Add_Product_Controller
         if ($num <= 0) {
             return '';
         }
-        return wc_format_decimal($num, 3);
+        return self::format_decimal_string($num, 3);
+    }
+
+    private static function format_decimal_string($value, $decimals)
+    {
+        $num = is_numeric($value) ? (float) $value : 0.0;
+        if ($num <= 0) {
+            return '';
+        }
+
+        $precision = max(0, min(6, (int) $decimals));
+        return number_format($num, $precision, '.', '');
     }
 
     private static function resolve_product_category_term($value, $create_if_missing = false, $parent_id = 0)
