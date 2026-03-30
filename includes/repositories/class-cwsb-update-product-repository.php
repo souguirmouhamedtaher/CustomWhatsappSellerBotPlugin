@@ -316,17 +316,25 @@ class CWSB_Update_Product_Repository
         $product_id     = (int) $product_id;
         $seller_user_id = (int) $seller_user_id;
 
-        $owner = (int) $wpdb->get_var(
+        $owner_row = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT post_author FROM {$wpdb->posts}
+                "SELECT post_author, post_status FROM {$wpdb->posts}
                   WHERE ID = %d AND post_type = 'product' LIMIT 1",
                 $product_id
-            )
+            ),
+            ARRAY_A
         );
 
+        if (!$owner_row) {
+            return false;
+        }
+
+        $owner = (int) $owner_row['post_author'];
         if ($owner !== $seller_user_id) {
             return false;
         }
+
+        $should_force_draft = self::contains_non_price_or_stock_changes($data);
 
         // Product name
         if (!empty($data['name'])) {
@@ -431,6 +439,13 @@ class CWSB_Update_Product_Repository
         }
 
         // Invalidate caches
+        if ($should_force_draft) {
+            wp_update_post([
+                'ID' => $product_id,
+                'post_status' => 'draft',
+            ]);
+        }
+
         clean_post_cache($product_id);
 
         if (class_exists('CWSB_Product_Repository') && class_exists('CWSB_Seller_Read_Repository')) {
@@ -445,6 +460,36 @@ class CWSB_Update_Product_Repository
         }
 
         return true;
+    }
+
+    /**
+     * Returns true when payload contains at least one change outside price/stock fields.
+     * Business rule: non price/quantity updates must move product back to draft.
+     */
+    private static function contains_non_price_or_stock_changes($data)
+    {
+        if (!is_array($data) || empty($data)) {
+            return false;
+        }
+
+        $price_or_stock_keys = [
+            'regular_eur',
+            'sale_eur',
+            'regular_tnd',
+            'sale_tnd',
+            'stock',
+        ];
+
+        foreach ($data as $key => $value) {
+            if (in_array((string) $key, $price_or_stock_keys, true)) {
+                continue;
+            }
+
+            // Treat any provided non price/stock key as a business-significant edit.
+            return true;
+        }
+
+        return false;
     }
 
     // -------------------------------------------------------------------------
