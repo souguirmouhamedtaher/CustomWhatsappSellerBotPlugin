@@ -67,6 +67,16 @@ class CWSB_Seller_Repository
         return CWSB_Seller_State_Repository::set_session_active_until_by_flow_token($flow_token, $session_active_until);
     }
 
+    public static function get_pre_expiry_auth_pending_sellers($page = 1, $limit = 100, $lead_minutes = 15)
+    {
+        return CWSB_Seller_Read_Repository::get_pre_expiry_auth_pending_sellers($page, $limit, $lead_minutes);
+    }
+
+    public static function mark_auth_portal_sent_by_phone($phone, $sent_at)
+    {
+        return CWSB_Seller_State_Repository::mark_auth_portal_sent_by_phone($phone, $sent_at);
+    }
+
     public static function set_reset_token_by_email($email, $reset_token, $reset_token_expiry)
     {
         return CWSB_Seller_State_Repository::set_reset_token_by_email($email, $reset_token, $reset_token_expiry);

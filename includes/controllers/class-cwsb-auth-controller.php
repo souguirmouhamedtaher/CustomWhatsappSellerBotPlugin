@@ -72,6 +72,7 @@ class CWSB_Auth_Controller
                 'phone' => ['required' => true],
                 'flow_token' => ['required' => false],
                 'code' => ['required' => false],
+                'auth_portal_sent_at' => ['required' => false],
             ],
         ]);
 
@@ -90,6 +91,27 @@ class CWSB_Auth_Controller
             'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'deactivate_seller_session'],
             'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
             'args' => ['flow_token' => ['required' => true]],
+        ]);
+
+        register_rest_route(CWSB_NS, '/seller/session/pre-expiry-auth-pending', [
+            'methods' => 'POST',
+            'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'get_pre_expiry_auth_pending_sellers'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args' => [
+                'page' => ['required' => false, 'default' => 1],
+                'limit' => ['required' => false, 'default' => 100],
+                'lead_minutes' => ['required' => false, 'default' => 15],
+            ],
+        ]);
+
+        register_rest_route(CWSB_NS, '/seller/session/mark-auth-portal-sent', [
+            'methods' => 'POST',
+            'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'mark_auth_portal_sent'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args' => [
+                'phone' => ['required' => true],
+                'sent_at' => ['required' => false],
+            ],
         ]);
 
         register_rest_route(CWSB_NS, '/seller/reset-token/set', [

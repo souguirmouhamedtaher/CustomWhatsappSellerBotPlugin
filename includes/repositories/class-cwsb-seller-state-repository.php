@@ -88,6 +88,7 @@ class CWSB_Seller_State_Repository
             'reset_token',
             'reset_token_expiry',
             'session_active_until',
+            'auth_portal_sent_at',
         ];
 
         $data = [];
@@ -202,7 +203,7 @@ class CWSB_Seller_State_Repository
             if ($user_id > 0) {
                 $table = CWSB_Seller_Read_Repository::state_table_name();
                 $updates = [];
-                foreach (['flow_token', 'code', 'reset_token', 'reset_token_expiry', 'session_active_until'] as $key) {
+                foreach (['flow_token', 'code', 'reset_token', 'reset_token_expiry', 'session_active_until', 'auth_portal_sent_at'] as $key) {
                     if (array_key_exists($key, (array) $state)) {
                         $updates[$key] = $state[$key];
                     }
@@ -249,6 +250,18 @@ class CWSB_Seller_State_Repository
             }
             if (array_key_exists('code', (array) $state)) {
                 $updates['code'] = $state['code'];
+            }
+            if (array_key_exists('reset_token', (array) $state)) {
+                $updates['reset_token'] = $state['reset_token'];
+            }
+            if (array_key_exists('reset_token_expiry', (array) $state)) {
+                $updates['reset_token_expiry'] = $state['reset_token_expiry'];
+            }
+            if (array_key_exists('session_active_until', (array) $state)) {
+                $updates['session_active_until'] = $state['session_active_until'];
+            }
+            if (array_key_exists('auth_portal_sent_at', (array) $state)) {
+                $updates['auth_portal_sent_at'] = $state['auth_portal_sent_at'];
             }
 
             if (!empty($updates)) {
@@ -315,7 +328,13 @@ class CWSB_Seller_State_Repository
             return null;
         }
 
-        $ok = self::save_seller_state($uid, ['session_active_until' => $session_active_until]);
+        $state_update = ['session_active_until' => $session_active_until];
+        // New active session starts a fresh cycle for auth-portal resend dedupe.
+        if ($session_active_until !== null && (int) $session_active_until > 0) {
+            $state_update['auth_portal_sent_at'] = null;
+        }
+
+        $ok = self::save_seller_state($uid, $state_update);
         if (!$ok) {
             return null;
         }
@@ -336,6 +355,36 @@ class CWSB_Seller_State_Repository
             'reset_token_expiry' => (int) $reset_token_expiry,
         ]);
 
+        if (!$ok) {
+            return null;
+        }
+
+        return CWSB_Seller_Read_Repository::find_vendor_by_user_id($uid);
+    }
+
+    public static function mark_auth_portal_sent_by_phone($phone, $sent_at)
+    {
+        $normalized_phone = CWSB_Utils::normalize_phone($phone);
+        if ($normalized_phone === '') {
+            return null;
+        }
+
+        $seller = CWSB_Seller_Read_Repository::find_state_seller_by_phone($normalized_phone);
+        if (!$seller || !isset($seller['user_id'])) {
+            return null;
+        }
+
+        $uid = (int) $seller['user_id'];
+        if ($uid <= 0) {
+            return null;
+        }
+
+        $timestamp = (int) $sent_at;
+        if ($timestamp <= 0) {
+            return null;
+        }
+
+        $ok = self::save_seller_state($uid, ['auth_portal_sent_at' => $timestamp]);
         if (!$ok) {
             return null;
         }

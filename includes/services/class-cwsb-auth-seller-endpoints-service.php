@@ -111,6 +111,7 @@ class CWSB_Auth_Seller_Endpoints_Service
             'reset_token' => $request->get_param('reset_token'),
             'reset_token_expiry' => $request->get_param('reset_token_expiry'),
             'session_active_until' => $request->get_param('session_active_until'),
+            'auth_portal_sent_at' => $request->get_param('auth_portal_sent_at'),
         ];
 
         if ($code_param !== null) {
@@ -147,6 +148,57 @@ class CWSB_Auth_Seller_Endpoints_Service
 
         $seller = CWSB_Seller_Repository::set_session_active_until_by_flow_token($flow_token, null);
         return CWSB_Response::ok(['seller' => $seller ?: null]);
+    }
+
+    public static function get_pre_expiry_auth_pending_sellers(WP_REST_Request $request)
+    {
+        $page = max(1, (int) $request->get_param('page'));
+        $limit = (int) $request->get_param('limit');
+        if ($limit <= 0) {
+            $limit = 100;
+        }
+        $limit = min($limit, 300);
+
+        $lead_minutes = (int) $request->get_param('lead_minutes');
+        if ($lead_minutes <= 0) {
+            $lead_minutes = 15;
+        }
+        $lead_minutes = min($lead_minutes, 1440);
+
+        $rows = CWSB_Seller_Repository::get_pre_expiry_auth_pending_sellers($page, $limit, $lead_minutes);
+
+        return CWSB_Response::ok([
+            'page' => $page,
+            'limit' => $limit,
+            'lead_minutes' => $lead_minutes,
+            'count' => is_array($rows) ? count($rows) : 0,
+            'sellers' => is_array($rows) ? $rows : [],
+        ]);
+    }
+
+    public static function mark_auth_portal_sent(WP_REST_Request $request)
+    {
+        $phone = (string) $request->get_param('phone');
+        $sent_at_param = $request->get_param('sent_at');
+        $sent_at = $sent_at_param === null ? round(microtime(true) * 1000) : (int) $sent_at_param;
+
+        if (trim($phone) === '') {
+            return CWSB_Response::error('invalid_request', 'phone is required.', 422);
+        }
+
+        if ($sent_at <= 0) {
+            return CWSB_Response::error('invalid_request', 'sent_at must be a positive timestamp.', 422);
+        }
+
+        $seller = CWSB_Seller_Repository::mark_auth_portal_sent_by_phone($phone, $sent_at);
+        if (!$seller) {
+            return CWSB_Response::error('not_found', 'Seller state not found for phone.', 404);
+        }
+
+        return CWSB_Response::ok([
+            'seller' => $seller,
+            'sent_at' => $sent_at,
+        ]);
     }
 
     public static function set_seller_reset_token(WP_REST_Request $request)

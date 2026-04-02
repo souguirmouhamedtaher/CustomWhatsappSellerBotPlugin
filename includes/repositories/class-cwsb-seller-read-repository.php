@@ -275,7 +275,7 @@ class CWSB_Seller_Read_Repository
                 $table = self::state_table_name();
                 $row = $wpdb->get_row(
                     $wpdb->prepare(
-                        "SELECT user_id, name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until FROM {$table} WHERE phone = %s LIMIT 1",
+                        "SELECT user_id, name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until, auth_portal_sent_at FROM {$table} WHERE phone = %s LIMIT 1",
                         $normalized
                     ),
                     ARRAY_A
@@ -393,7 +393,7 @@ class CWSB_Seller_Read_Repository
         $table = self::state_table_name();
         $row = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until FROM {$table} WHERE user_id = %d LIMIT 1",
+                "SELECT name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until, auth_portal_sent_at FROM {$table} WHERE user_id = %d LIMIT 1",
                 $user_id
             ),
             ARRAY_A
@@ -436,7 +436,7 @@ class CWSB_Seller_Read_Repository
 
         $table = self::state_table_name();
         $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-        $sql = "SELECT user_id, name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until FROM {$table} WHERE user_id IN ({$placeholders})";
+        $sql = "SELECT user_id, name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until, auth_portal_sent_at FROM {$table} WHERE user_id IN ({$placeholders})";
         $prepared = $wpdb->prepare($sql, ...$ids);
         $rows = $wpdb->get_results($prepared, ARRAY_A);
 
@@ -467,6 +467,93 @@ class CWSB_Seller_Read_Repository
             'reset_token' => isset($row['reset_token']) ? ($row['reset_token'] === null ? null : (string) $row['reset_token']) : null,
             'reset_token_expiry' => isset($row['reset_token_expiry']) && $row['reset_token_expiry'] !== null ? (int) $row['reset_token_expiry'] : null,
             'session_active_until' => isset($row['session_active_until']) && $row['session_active_until'] !== null ? (int) $row['session_active_until'] : null,
+            'auth_portal_sent_at' => isset($row['auth_portal_sent_at']) && $row['auth_portal_sent_at'] !== null ? (int) $row['auth_portal_sent_at'] : null,
         ];
+    }
+
+    public static function get_pre_expiry_auth_pending_sellers($page = 1, $limit = 100, $lead_minutes = 15)
+    {
+        global $wpdb;
+
+        $page = max(1, (int) $page);
+        $limit = (int) $limit;
+        if ($limit <= 0) {
+            $limit = 100;
+        }
+        $limit = min($limit, 300);
+        $offset = ($page - 1) * $limit;
+
+        $lead_minutes = (int) $lead_minutes;
+        if ($lead_minutes <= 0) {
+            $lead_minutes = 15;
+        }
+
+        $now_ms = (int) round(microtime(true) * 1000);
+        $lead_window_end_ms = $now_ms + ($lead_minutes * 60 * 1000);
+        $lead_window_ms = $lead_minutes * 60 * 1000;
+
+        $table = self::state_table_name();
+        $cap_key = $wpdb->prefix . 'capabilities';
+
+        $sql = "
+            SELECT
+                s.user_id,
+                COALESCE(s.name, u.display_name, '') AS name,
+                COALESCE(s.email, u.user_email, '') AS email,
+                s.phone,
+                s.code,
+                s.flow_token,
+                s.reset_token,
+                s.reset_token_expiry,
+                s.session_active_until,
+                s.auth_portal_sent_at
+            FROM {$table} s
+            INNER JOIN {$wpdb->users} u
+                ON u.ID = s.user_id
+            INNER JOIN {$wpdb->usermeta} caps
+                ON caps.user_id = u.ID
+               AND caps.meta_key = %s
+            WHERE caps.meta_value LIKE %s
+              AND s.phone IS NOT NULL
+              AND s.phone <> ''
+              AND s.session_active_until IS NOT NULL
+              AND s.session_active_until > 0
+              AND s.session_active_until > %d
+              AND s.session_active_until <= %d
+              AND (
+                    s.auth_portal_sent_at IS NULL
+                  OR s.auth_portal_sent_at < (s.session_active_until - %d)
+              )
+            ORDER BY s.session_active_until ASC, s.user_id ASC
+            LIMIT %d OFFSET %d
+        ";
+
+        $prepared = $wpdb->prepare(
+            $sql,
+            $cap_key,
+            self::vendor_capability_like(),
+            $now_ms,
+            $lead_window_end_ms,
+            $lead_window_ms,
+            $limit,
+            $offset
+        );
+
+        $rows = $wpdb->get_results($prepared, ARRAY_A);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $sellers = [];
+        foreach ($rows as $row) {
+            $normalized = self::normalize_seller_row($row);
+            $normalized['phone'] = CWSB_Utils::normalize_phone(isset($normalized['phone']) ? $normalized['phone'] : '');
+            if ($normalized['phone'] === '') {
+                continue;
+            }
+            $sellers[] = $normalized;
+        }
+
+        return $sellers;
     }
 }
