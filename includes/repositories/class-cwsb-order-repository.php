@@ -26,8 +26,8 @@ if (!class_exists('CWSB_Utils')) {
  */
 class CWSB_Order_Repository
 {
-    const DEFAULT_ORDERS_LIMIT = 20;
-    const MAX_ORDERS_PAGE_LIMIT = 25;
+    const DEFAULT_ORDERS_LIMIT = 5;
+    const MAX_ORDERS_PAGE_LIMIT = 5;
     const MAX_PRODUCT_IDS = 3000;
 
     private static function order_counters_flow_cache_key($flow_token)
@@ -37,12 +37,12 @@ class CWSB_Order_Repository
 
     private static function order_summary_list_flow_cache_key($flow_token)
     {
-        return 'order:summary:list:flow:' . CWSB_Utils::normalize_text($flow_token) . ':limit:' . (int) self::DEFAULT_ORDERS_LIMIT;
+        return 'order:summary:list:flow:' . CWSB_Utils::normalize_text($flow_token);
     }
 
     private static function order_list_flow_cache_key($flow_token)
     {
-        return 'order:list:flow:' . CWSB_Utils::normalize_text($flow_token) . ':limit:' . (int) self::DEFAULT_ORDERS_LIMIT;
+        return 'order:list:flow:' . CWSB_Utils::normalize_text($flow_token);
     }
 
     private static function order_detail_cache_key($order_id)
@@ -85,7 +85,7 @@ class CWSB_Order_Repository
             return [];
         }
 
-        $order_ids = self::find_order_ids_for_seller($seller_user_id, self::DEFAULT_ORDERS_LIMIT);
+        $order_ids = self::find_order_ids_for_seller($seller_user_id);
         if (empty($order_ids)) {
             CWSB_Cache::set($cache_key, []);
             return [];
@@ -125,7 +125,7 @@ class CWSB_Order_Repository
             return $empty;
         }
 
-        $order_ids = self::find_order_ids_for_seller($seller_user_id, self::DEFAULT_ORDERS_LIMIT);
+        $order_ids = self::find_order_ids_for_seller($seller_user_id);
         if (empty($order_ids)) {
             $empty = self::empty_order_counters();
             CWSB_Cache::set($cache_key, $empty);
@@ -177,7 +177,7 @@ class CWSB_Order_Repository
             return [];
         }
 
-        $order_ids = self::find_order_ids_for_seller($seller_user_id, self::DEFAULT_ORDERS_LIMIT);
+        $order_ids = self::find_order_ids_for_seller($seller_user_id);
         if (empty($order_ids)) {
             CWSB_Cache::set($cache_key, []);
             return [];
@@ -205,7 +205,7 @@ class CWSB_Order_Repository
             return [
                 'count' => 0,
                 'page' => 1,
-                'limit' => 10,
+                'limit' => 5,
                 'has_more' => false,
                 'next_page' => null,
                 'status_filter' => 'all',
@@ -658,12 +658,15 @@ class CWSB_Order_Repository
         return 'A livrer';
     }
 
-    private static function find_order_ids_for_seller($seller_user_id, $limit)
+    private static function find_order_ids_for_seller($seller_user_id, $limit = null)
     {
         global $wpdb;
 
         $seller_user_id = (int) $seller_user_id;
-        $limit = max(1, (int) $limit);
+        $safe_limit = null;
+        if ($limit !== null) {
+            $safe_limit = max(1, (int) $limit);
+        }
         if ($seller_user_id <= 0) {
             return [];
         }
@@ -685,11 +688,16 @@ class CWSB_Order_Repository
                   AND o.post_type = 'shop_order'
                   AND o.post_status NOT IN ('trash', 'auto-draft')
                 ORDER BY o.post_date_gmt DESC, o.ID DESC
-                LIMIT %d
             ";
 
+            if ($safe_limit !== null) {
+                $sql .= "\n                LIMIT %d\n";
+            }
+
             $params = array_map('intval', $product_ids);
-            $params[] = (int) $limit;
+            if ($safe_limit !== null) {
+                $params[] = (int) $safe_limit;
+            }
             $rows = $wpdb->get_col($wpdb->prepare($sql, ...$params));
             $ids = self::sanitize_int_ids($rows);
             if (!empty($ids)) {
@@ -715,11 +723,16 @@ class CWSB_Order_Repository
               AND o.post_status NOT IN ('trash', 'auto-draft')
               AND CAST(oim.meta_value AS UNSIGNED) IN ({$product_placeholders})
             ORDER BY o.post_date_gmt DESC, o.ID DESC
-            LIMIT %d
         ";
 
+        if ($safe_limit !== null) {
+            $sql .= "\n            LIMIT %d\n";
+        }
+
         $params = array_map('intval', $product_ids);
-        $params[] = (int) $limit;
+        if ($safe_limit !== null) {
+            $params[] = (int) $safe_limit;
+        }
         $rows = $wpdb->get_col($wpdb->prepare($sql, ...$params));
 
         return self::sanitize_int_ids($rows);

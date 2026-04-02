@@ -326,13 +326,13 @@ class CWSB_Auth_Seller_Endpoints_Service
                 $flow_token,
                 $status_filter,
                 $page > 0 ? $page : 1,
-                $limit > 0 ? $limit : 10
+                $limit > 0 ? $limit : 5
             );
 
             return CWSB_Response::ok([
                 'count' => isset($paged['count']) ? (int) $paged['count'] : 0,
                 'page' => isset($paged['page']) ? (int) $paged['page'] : 1,
-                'limit' => isset($paged['limit']) ? (int) $paged['limit'] : 10,
+                'limit' => isset($paged['limit']) ? (int) $paged['limit'] : 5,
                 'has_more' => !empty($paged['has_more']),
                 'next_page' => isset($paged['next_page']) ? $paged['next_page'] : null,
                 'status_filter' => isset($paged['status_filter']) ? (string) $paged['status_filter'] : 'all',
@@ -367,7 +367,7 @@ class CWSB_Auth_Seller_Endpoints_Service
         if ($limit <= 0) {
             $limit = 3;
         }
-        $limit = min($limit, 25);
+        $limit = min($limit, 3);
 
         if (trim($order_id) === '') {
             return CWSB_Response::error('invalid_request', 'order_id is required.', 422);

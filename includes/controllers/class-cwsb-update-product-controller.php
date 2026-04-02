@@ -100,7 +100,7 @@ class CWSB_Update_Product_Controller
     {
         $flow_token = CWSB_Utils::normalize_text($request->get_param('flow_token'));
         $page       = max(1, (int) $request->get_param('page'));
-        $limit      = max(1, min(20, (int) $request->get_param('limit')));
+        $limit      = max(1, min(5, (int) $request->get_param('limit')));
 
         if ($flow_token === '') {
             return CWSB_Response::error('invalid_params', 'flow_token is required.', 400);

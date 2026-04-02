@@ -23,7 +23,7 @@ class CWSB_Update_Product_Repository
      *
      * @param int $seller_user_id WordPress user ID of the seller.
      * @param int $page           1-based page number.
-     * @param int $limit          Items per page (1–20).
+        * @param int $limit          Items per page (1–5).
      * @return array { total: int, products: array[] }
      */
     public static function find_products_paged($seller_user_id, $page, $limit)
@@ -32,7 +32,7 @@ class CWSB_Update_Product_Repository
 
         $seller_user_id = (int) $seller_user_id;
         $page           = max(1, (int) $page);
-        $limit          = max(1, min(20, (int) $limit));
+        $limit          = max(1, min(5, (int) $limit));
         $offset         = ($page - 1) * $limit;
 
         $total = (int) $wpdb->get_var(
