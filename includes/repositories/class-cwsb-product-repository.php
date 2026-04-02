@@ -141,6 +141,7 @@ class CWSB_Product_Repository
                 p.ID,
                 p.post_title,
                                 p.post_date,
+                                p.post_status,
                 MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS sku,
                 MAX(CASE WHEN pm.meta_key = '_price' THEN pm.meta_value END) AS price,
                 MAX(CASE WHEN pm.meta_key = '_sale_price' THEN pm.meta_value END) AS sale_price,
@@ -160,7 +161,7 @@ class CWSB_Product_Repository
             WHERE p.post_type = 'product'
               AND p.post_status IN ('publish', 'private', 'draft', 'pending')
               AND p.post_author = %d
-            GROUP BY p.ID, p.post_title, p.post_date
+                        GROUP BY p.ID, p.post_title, p.post_date, p.post_status
             ORDER BY p.post_date DESC
             LIMIT %d
         ";
@@ -195,6 +196,9 @@ class CWSB_Product_Repository
                 'id' => isset($row['ID']) ? (string) $row['ID'] : '',
                 'name' => isset($row['post_title']) ? (string) $row['post_title'] : '',
                 'type' => $is_variable ? 'variable' : 'simple',
+                'post_status' => isset($row['post_status']) ? (string) $row['post_status'] : '',
+                'status' => isset($row['post_status']) ? (string) $row['post_status'] : '',
+                'state' => isset($row['post_status']) ? (string) $row['post_status'] : '',
                 'sku' => isset($row['sku']) ? (string) $row['sku'] : '',
                 'price' => $final_price,
                 'stock' => $stock,
@@ -282,6 +286,7 @@ class CWSB_Product_Repository
                 p.post_excerpt,
                 p.post_content,
                 p.post_date,
+                p.post_status,
                 MAX(CASE WHEN pm.meta_key = '_sku' THEN pm.meta_value END) AS sku,
                 MAX(CASE WHEN pm.meta_key = '_regular_price' THEN pm.meta_value END) AS regular_price,
                 MAX(CASE WHEN pm.meta_key = '_sale_price' THEN pm.meta_value END) AS sale_price,
@@ -296,7 +301,7 @@ class CWSB_Product_Repository
             WHERE p.ID = %d
               AND p.post_type = 'product'
               AND p.post_status IN ('publish', 'private', 'draft', 'pending')
-            GROUP BY p.ID, p.post_title, p.post_excerpt, p.post_content, p.post_date
+                        GROUP BY p.ID, p.post_title, p.post_excerpt, p.post_content, p.post_date, p.post_status
             LIMIT 1
         ";
 
@@ -328,6 +333,9 @@ class CWSB_Product_Repository
             'id' => (string) $pid,
             'name' => (string) $row->post_title,
             'type' => $is_variable ? 'variable' : 'simple',
+            'post_status' => (string) ($row->post_status ?? ''),
+            'status' => (string) ($row->post_status ?? ''),
+            'state' => (string) ($row->post_status ?? ''),
             'sku' => (string) ($row->sku ?? ''),
             'image_src' => $image_src,
             'image_gallery' => $image_gallery,

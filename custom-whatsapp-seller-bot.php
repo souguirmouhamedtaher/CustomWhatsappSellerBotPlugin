@@ -54,6 +54,29 @@ function cwsb_create_tables()
     dbDelta($sql);
 }
 
+/**
+ * Ensures seller state table exists during runtime (first-run/self-healing).
+ * Keeps API usable even when plugin activation hook did not run for this DB.
+ */
+function cwsb_ensure_tables()
+{
+    static $checked = false;
+
+    if ($checked) {
+        return;
+    }
+    $checked = true;
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'cwsb_seller_state';
+    $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+    if ($exists === $table_name) {
+        return;
+    }
+
+    cwsb_create_tables();
+}
+
 // Load plugin classes grouped by role for easier maintenance.
 $cwsb_class_files = [
     'includes/utilities/class-cwsb-response.php',
@@ -77,6 +100,8 @@ foreach ($cwsb_class_files as $cwsb_relative_path) {
 
 // Ensure state table exists before first API call.
 register_activation_hook(__FILE__, 'cwsb_create_tables');
+add_action('plugins_loaded', 'cwsb_ensure_tables', 5);
+add_action('rest_api_init', 'cwsb_ensure_tables', 1);
 // Register REST endpoints under whatsapp-bot/v1.
 add_action('rest_api_init', ['CWSB_Auth_Controller', 'register_routes']);
 add_action('rest_api_init', ['CWSB_Add_Product_Controller', 'register_routes']);

@@ -251,10 +251,26 @@ class CWSB_Add_Product_Controller
         }
 
         $pricing = isset($product['pricing']) && is_array($product['pricing']) ? $product['pricing'] : [];
-        $regular_tnd_num = self::to_positive_float(isset($pricing['regular_tnd']) ? $pricing['regular_tnd'] : null);
-        $promo_tnd_num = self::to_positive_float(isset($pricing['promo_tnd']) ? $pricing['promo_tnd'] : null);
-        $regular_eur_num = self::to_positive_float(isset($pricing['regular_eur']) ? $pricing['regular_eur'] : null);
-        $promo_eur_num = self::to_positive_float(isset($pricing['promo_eur']) ? $pricing['promo_eur'] : null);
+        $regular_tnd_num = self::to_positive_float(
+            isset($pricing['regular_tnd']) ? $pricing['regular_tnd'] :
+            (isset($pricing['prix_regulier_tnd']) ? $pricing['prix_regulier_tnd'] :
+            (isset($product['prix_regulier_tnd']) ? $product['prix_regulier_tnd'] : null))
+        );
+        $promo_tnd_num = self::to_positive_float(
+            isset($pricing['promo_tnd']) ? $pricing['promo_tnd'] :
+            (isset($pricing['prix_promo_tnd']) ? $pricing['prix_promo_tnd'] :
+            (isset($product['prix_promo_tnd']) ? $product['prix_promo_tnd'] : null))
+        );
+        $regular_eur_num = self::to_positive_float(
+            isset($pricing['regular_eur']) ? $pricing['regular_eur'] :
+            (isset($pricing['prix_regulier_eur']) ? $pricing['prix_regulier_eur'] :
+            (isset($product['prix_regulier_eur']) ? $product['prix_regulier_eur'] : null))
+        );
+        $promo_eur_num = self::to_positive_float(
+            isset($pricing['promo_eur']) ? $pricing['promo_eur'] :
+            (isset($pricing['prix_promo_eur']) ? $pricing['prix_promo_eur'] :
+            (isset($product['prix_promo_eur']) ? $product['prix_promo_eur'] : null))
+        );
 
         if (($regular_tnd_num > 0 && $promo_tnd_num > 0 && $promo_tnd_num >= $regular_tnd_num)
             || ($regular_eur_num > 0 && $promo_eur_num > 0 && $promo_eur_num >= $regular_eur_num)) {
@@ -315,8 +331,16 @@ class CWSB_Add_Product_Controller
                 update_post_meta($product_id, '_sku', $sku);
             }
 
-            $regular_eur = self::to_price_string(isset($pricing['regular_eur']) ? $pricing['regular_eur'] : null);
-            $promo_eur = self::to_price_string(isset($pricing['promo_eur']) ? $pricing['promo_eur'] : null);
+            $regular_eur = self::to_price_string(
+                isset($pricing['regular_eur']) ? $pricing['regular_eur'] :
+                (isset($pricing['prix_regulier_eur']) ? $pricing['prix_regulier_eur'] :
+                (isset($product['prix_regulier_eur']) ? $product['prix_regulier_eur'] : null))
+            );
+            $promo_eur = self::to_price_string(
+                isset($pricing['promo_eur']) ? $pricing['promo_eur'] :
+                (isset($pricing['prix_promo_eur']) ? $pricing['prix_promo_eur'] :
+                (isset($product['prix_promo_eur']) ? $product['prix_promo_eur'] : null))
+            );
             if ($regular_eur !== '') {
                 update_post_meta($product_id, '_regular_price', $regular_eur);
             }
@@ -327,27 +351,32 @@ class CWSB_Add_Product_Controller
                 update_post_meta($product_id, '_price', $regular_eur);
             }
 
-            $quantity = isset($product['quantity']) ? (int) $product['quantity'] : 0;
+            $quantity = isset($product['quantity']) ? (int) $product['quantity'] : (isset($product['quantite']) ? (int) $product['quantite'] : 0);
             if ($quantity > 0) {
                 update_post_meta($product_id, '_manage_stock', 'yes');
                 update_post_meta($product_id, '_stock', (string) $quantity);
                 update_post_meta($product_id, '_stock_status', 'instock');
             } else {
-                update_post_meta($product_id, '_manage_stock', 'no');
-                update_post_meta($product_id, '_stock_status', 'instock');
+                update_post_meta($product_id, '_manage_stock', 'yes');
+                update_post_meta($product_id, '_stock', '0');
+                update_post_meta($product_id, '_stock_status', 'outofstock');
             }
 
             $dimensions = isset($product['dimensions']) && is_array($product['dimensions']) ? $product['dimensions'] : [];
-            $length = isset($dimensions['longueur']) ? self::to_dimension_string($dimensions['longueur']) : '';
-            $width = isset($dimensions['largeur']) ? self::to_dimension_string($dimensions['largeur']) : '';
-            $height = isset($dimensions['profondeur']) ? self::to_dimension_string($dimensions['profondeur']) : '';
+            $length = isset($dimensions['longueur']) ? self::to_dimension_string($dimensions['longueur']) : (isset($dimensions['length']) ? self::to_dimension_string($dimensions['length']) : '');
+            $width = isset($dimensions['largeur']) ? self::to_dimension_string($dimensions['largeur']) : (isset($dimensions['width']) ? self::to_dimension_string($dimensions['width']) : '');
+            $height = isset($dimensions['profondeur']) ? self::to_dimension_string($dimensions['profondeur']) : (isset($dimensions['height']) ? self::to_dimension_string($dimensions['height']) : '');
+            $dimension_unit = CWSB_Utils::normalize_text(isset($dimensions['unit']) ? $dimensions['unit'] : (isset($dimensions['unite']) ? $dimensions['unite'] : 'cm'));
             update_post_meta($product_id, '_length', $length);
             update_post_meta($product_id, '_width', $width);
             update_post_meta($product_id, '_height', $height);
+            update_post_meta($product_id, '_cwsb_dim_unit', $dimension_unit !== '' ? $dimension_unit : 'cm');
 
             $weight = isset($product['weight']) && is_array($product['weight']) ? $product['weight'] : [];
             $weight_value = isset($weight['value']) ? self::to_dimension_string($weight['value']) : '';
+            $weight_unit = CWSB_Utils::normalize_text(isset($weight['unit']) ? $weight['unit'] : (isset($weight['unite']) ? $weight['unite'] : 'kg'));
             update_post_meta($product_id, '_weight', $weight_value);
+            update_post_meta($product_id, '_cwsb_weight_unit', $weight_unit !== '' ? $weight_unit : 'kg');
 
             $category_id = CWSB_Utils::normalize_text(isset($product['category_id']) ? $product['category_id'] : '');
             $subcategory_id = CWSB_Utils::normalize_text(isset($product['subcategory_id']) ? $product['subcategory_id'] : '');
@@ -362,8 +391,16 @@ class CWSB_Add_Product_Controller
                 update_post_meta($product_id, '_cwsb_idempotency_key', $idempotency_key);
             }
 
-            $regular_tnd = self::to_price_string(isset($pricing['regular_tnd']) ? $pricing['regular_tnd'] : null);
-            $promo_tnd = self::to_price_string(isset($pricing['promo_tnd']) ? $pricing['promo_tnd'] : null);
+            $regular_tnd = self::to_price_string(
+                isset($pricing['regular_tnd']) ? $pricing['regular_tnd'] :
+                (isset($pricing['prix_regulier_tnd']) ? $pricing['prix_regulier_tnd'] :
+                (isset($product['prix_regulier_tnd']) ? $product['prix_regulier_tnd'] : null))
+            );
+            $promo_tnd = self::to_price_string(
+                isset($pricing['promo_tnd']) ? $pricing['promo_tnd'] :
+                (isset($pricing['prix_promo_tnd']) ? $pricing['prix_promo_tnd'] :
+                (isset($product['prix_promo_tnd']) ? $product['prix_promo_tnd'] : null))
+            );
             if ($regular_tnd !== '') {
                 update_post_meta($product_id, '_regular_price_tnd', $regular_tnd);
                 update_post_meta($product_id, '_price_tnd', $promo_tnd !== '' ? $promo_tnd : $regular_tnd);
@@ -373,14 +410,10 @@ class CWSB_Add_Product_Controller
             }
 
             $attributes = isset($product['attributes']) && is_array($product['attributes']) ? $product['attributes'] : [];
-            $color = CWSB_Utils::normalize_text(isset($attributes['couleur']) ? $attributes['couleur'] : '');
-            $size = CWSB_Utils::normalize_text(isset($attributes['taille']) ? $attributes['taille'] : '');
-            if ($color !== '') {
-                update_post_meta($product_id, '_cwsb_color', $color);
-            }
-            if ($size !== '') {
-                update_post_meta($product_id, '_cwsb_size', $size);
-            }
+            $color = CWSB_Utils::normalize_text(isset($attributes['couleur']) ? $attributes['couleur'] : (isset($attributes['color']) ? $attributes['color'] : ''));
+            $size = CWSB_Utils::normalize_text(isset($attributes['taille']) ? $attributes['taille'] : (isset($attributes['size']) ? $attributes['size'] : ''));
+            update_post_meta($product_id, '_cwsb_color', $color);
+            update_post_meta($product_id, '_cwsb_size', $size);
 
             $category_label = CWSB_Utils::normalize_text(isset($product['category_label']) ? $product['category_label'] : '');
             $subcategory_label = CWSB_Utils::normalize_text(isset($product['subcategory_label']) ? $product['subcategory_label'] : '');
@@ -743,7 +776,7 @@ class CWSB_Add_Product_Controller
             ];
         }
 
-        $quantity = isset($p['quantity']) ? (int) $p['quantity'] : 0;
+        $quantity = isset($p['quantity']) ? (int) $p['quantity'] : (isset($p['quantite']) ? (int) $p['quantite'] : 0);
         if ($quantity <= 0) {
             $errors[] = [
                 'field' => 'product.quantity',
@@ -753,10 +786,26 @@ class CWSB_Add_Product_Controller
         }
 
         $pricing = isset($p['pricing']) && is_array($p['pricing']) ? $p['pricing'] : [];
-        $regular_tnd = self::to_positive_float(isset($pricing['regular_tnd']) ? $pricing['regular_tnd'] : null);
-        $promo_tnd = self::to_positive_float(isset($pricing['promo_tnd']) ? $pricing['promo_tnd'] : null);
-        $regular_eur = self::to_positive_float(isset($pricing['regular_eur']) ? $pricing['regular_eur'] : null);
-        $promo_eur = self::to_positive_float(isset($pricing['promo_eur']) ? $pricing['promo_eur'] : null);
+        $regular_tnd = self::to_positive_float(
+            isset($pricing['regular_tnd']) ? $pricing['regular_tnd'] :
+            (isset($pricing['prix_regulier_tnd']) ? $pricing['prix_regulier_tnd'] :
+            (isset($p['prix_regulier_tnd']) ? $p['prix_regulier_tnd'] : null))
+        );
+        $promo_tnd = self::to_positive_float(
+            isset($pricing['promo_tnd']) ? $pricing['promo_tnd'] :
+            (isset($pricing['prix_promo_tnd']) ? $pricing['prix_promo_tnd'] :
+            (isset($p['prix_promo_tnd']) ? $p['prix_promo_tnd'] : null))
+        );
+        $regular_eur = self::to_positive_float(
+            isset($pricing['regular_eur']) ? $pricing['regular_eur'] :
+            (isset($pricing['prix_regulier_eur']) ? $pricing['prix_regulier_eur'] :
+            (isset($p['prix_regulier_eur']) ? $p['prix_regulier_eur'] : null))
+        );
+        $promo_eur = self::to_positive_float(
+            isset($pricing['promo_eur']) ? $pricing['promo_eur'] :
+            (isset($pricing['prix_promo_eur']) ? $pricing['prix_promo_eur'] :
+            (isset($p['prix_promo_eur']) ? $p['prix_promo_eur'] : null))
+        );
 
         if ($regular_tnd <= 0 && $regular_eur <= 0) {
             $errors[] = [
@@ -774,11 +823,27 @@ class CWSB_Add_Product_Controller
             ];
         }
 
+        if ($promo_tnd > 0 && $regular_tnd <= 0) {
+            $errors[] = [
+                'field' => 'product.pricing.regular_tnd',
+                'code' => 'required',
+                'message' => 'Regular TND is required when promo TND is provided.',
+            ];
+        }
+
         if ($regular_eur > 0 && $promo_eur > 0 && $promo_eur >= $regular_eur) {
             $errors[] = [
                 'field' => 'product.pricing.promo_eur',
                 'code' => 'invalid_range',
                 'message' => 'Promo EUR must be strictly lower than regular EUR.',
+            ];
+        }
+
+        if ($promo_eur > 0 && $regular_eur <= 0) {
+            $errors[] = [
+                'field' => 'product.pricing.regular_eur',
+                'code' => 'required',
+                'message' => 'Regular EUR is required when promo EUR is provided.',
             ];
         }
 
