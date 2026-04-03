@@ -243,7 +243,24 @@ class CWSB_Utils
             return '216' . $digits;
         }
 
-        // Tunisia-only plugin: reject any other format instead of guessing.
+        // France examples:
+        // - +33782655322  -> 33782655322
+        // - 33782655322   -> 33782655322
+        // - 0033782655322 -> 33782655322
+        // - 0782655322    -> 33782655322
+        if (strpos($digits, '0033') === 0 && strlen($digits) === 13) {
+            return substr($digits, 2);
+        }
+
+        if (strpos($digits, '33') === 0 && strlen($digits) === 11) {
+            return $digits;
+        }
+
+        if (strlen($digits) === 10 && strpos($digits, '0') === 0) {
+            return '33' . substr($digits, 1);
+        }
+
+        // Reject unsupported countries (for example Senegal) instead of guessing.
         return '';
     }
 
@@ -269,22 +286,34 @@ class CWSB_Utils
         if ($canonical === '') {
             return [
                 'canonical' => '',
-                'local8' => '',
-                'legacy216' => '',
+                'local' => '',
+                'legacy' => '',
+                'intl00' => '',
+                'intl_plus' => '',
+                'suffix' => '',
+                'suffix_length' => 0,
             ];
         }
 
-        $local8 = (strlen($canonical) === 11 && strpos($canonical, '216') === 0)
-            ? substr($canonical, -8)
-            : $canonical;
-        $legacy216 = (strlen($local8) === 8)
-            ? ('216' . $local8)
-            : $canonical;
+        if (strlen($canonical) === 11 && strpos($canonical, '216') === 0) {
+            $local = substr($canonical, -8);
+            $suffix = $local;
+        } elseif (strlen($canonical) === 11 && strpos($canonical, '33') === 0) {
+            $local = '0' . substr($canonical, 2);
+            $suffix = substr($canonical, 2);
+        } else {
+            $local = $canonical;
+            $suffix = $canonical;
+        }
 
         return [
             'canonical' => $canonical,
-            'local8' => $local8,
-            'legacy216' => $legacy216,
+            'local' => $local,
+            'legacy' => $canonical,
+            'intl00' => '00' . $canonical,
+            'intl_plus' => '+' . $canonical,
+            'suffix' => $suffix,
+            'suffix_length' => strlen($suffix),
         ];
     }
 

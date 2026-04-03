@@ -53,8 +53,12 @@ class CWSB_Seller_Read_Repository
             return null;
         }
 
-        $local8 = $refs['local8'];
-        $legacy216 = $refs['legacy216'];
+        $local = $refs['local'];
+        $legacy = $refs['legacy'];
+        $intl00 = $refs['intl00'];
+        $intl_plus = $refs['intl_plus'];
+        $suffix = $refs['suffix'];
+        $suffix_length = $refs['suffix_length'];
 
         $cache_key = self::seller_phone_cache_key($normalized);
         $cache_hit = false;
@@ -67,12 +71,20 @@ class CWSB_Seller_Read_Repository
         $user_id = (int) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT user_id FROM {$table}
-                 WHERE phone IN (%s, %s)
-                    OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), 8) = %s
+                 WHERE phone IN (%s, %s, %s, %s)
+                    OR REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', '') IN (%s, %s, %s, %s)
+                    OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), %d) = %s
                  LIMIT 1",
-                $local8,
-                $legacy216,
-                $local8
+                $local,
+                $legacy,
+                $intl00,
+                $intl_plus,
+                $local,
+                $legacy,
+                $intl00,
+                $normalized,
+                $suffix_length,
+                $suffix
             )
         );
 
@@ -94,7 +106,7 @@ class CWSB_Seller_Read_Repository
             INNER JOIN {$wpdb->usermeta} um_phone ON um_phone.user_id = u.ID
             INNER JOIN {$wpdb->usermeta} um_caps ON um_caps.user_id = u.ID
             WHERE um_phone.meta_key IN ('billing_phone', 'phone', 'wcfm_phone')
-              AND um_phone.meta_value IN (%s, %s)
+                            AND um_phone.meta_value IN (%s, %s, %s, %s)
               AND um_caps.meta_key = %s
               AND um_caps.meta_value LIKE %s
             LIMIT 1
@@ -103,8 +115,10 @@ class CWSB_Seller_Read_Repository
         $row = $wpdb->get_row(
             $wpdb->prepare(
                 $sql_exact,
-                $local8,
-                $legacy216,
+                $local,
+                $legacy,
+                $intl00,
+                $intl_plus,
                 $cap_key,
                 self::vendor_capability_like()
             ),
@@ -123,8 +137,8 @@ class CWSB_Seller_Read_Repository
                 INNER JOIN {$wpdb->usermeta} um_caps ON um_caps.user_id = u.ID
                 WHERE um_phone.meta_key IN ('billing_phone', 'phone', 'wcfm_phone')
                   AND (
-                        REPLACE(REPLACE(REPLACE(um_phone.meta_value, '+', ''), ' ', ''), '-', '') IN (%s, %s)
-                     OR RIGHT(REPLACE(REPLACE(REPLACE(um_phone.meta_value, '+', ''), ' ', ''), '-', ''), 8) = %s
+                                REPLACE(REPLACE(REPLACE(um_phone.meta_value, '+', ''), ' ', ''), '-', '') IN (%s, %s, %s, %s)
+                            OR RIGHT(REPLACE(REPLACE(REPLACE(um_phone.meta_value, '+', ''), ' ', ''), '-', ''), %d) = %s
                   )
                   AND um_caps.meta_key = %s
                   AND um_caps.meta_value LIKE %s
@@ -134,9 +148,12 @@ class CWSB_Seller_Read_Repository
             $row = $wpdb->get_row(
                 $wpdb->prepare(
                     $sql_normalized,
-                    $local8,
-                    $legacy216,
-                    $local8,
+                    $local,
+                    $legacy,
+                    $intl00,
+                    $normalized,
+                    $suffix_length,
+                    $suffix,
                     $cap_key,
                     self::vendor_capability_like()
                 ),
@@ -296,25 +313,37 @@ class CWSB_Seller_Read_Repository
             return null;
         }
 
-        $local8 = $refs['local8'];
-        $legacy216 = $refs['legacy216'];
+        $local = $refs['local'];
+        $legacy = $refs['legacy'];
+        $intl00 = $refs['intl00'];
+        $intl_plus = $refs['intl_plus'];
+        $suffix = $refs['suffix'];
+        $suffix_length = $refs['suffix_length'];
 
         return CWSB_Cache::with_cache(
             'seller-state-by-phone',
             $normalized,
-            function () use ($normalized, $local8, $legacy216) {
+            function () use ($normalized, $local, $legacy, $intl00, $intl_plus, $suffix, $suffix_length) {
                 global $wpdb;
                 $table = self::state_table_name();
                 $row = $wpdb->get_row(
                     $wpdb->prepare(
                         "SELECT user_id, name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until, auth_portal_sent_at
                          FROM {$table}
-                         WHERE phone IN (%s, %s)
-                            OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), 8) = %s
+                         WHERE phone IN (%s, %s, %s, %s)
+                            OR REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', '') IN (%s, %s, %s, %s)
+                            OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), %d) = %s
                          LIMIT 1",
-                        $local8,
-                        $legacy216,
-                        $local8
+                        $local,
+                        $legacy,
+                        $intl00,
+                        $intl_plus,
+                        $local,
+                        $legacy,
+                        $intl00,
+                        $normalized,
+                        $suffix_length,
+                        $suffix
                     ),
                     ARRAY_A
                 );
