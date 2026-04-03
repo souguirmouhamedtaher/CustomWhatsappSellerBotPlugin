@@ -22,6 +22,28 @@ if (!defined('ABSPATH')) {
 class CWSB_Cache
 {
     /**
+     * Runtime cache kill-switch.
+     *
+     * Enable by setting either:
+     * - define('CWSB_DISABLE_PLUGIN_CACHE', true)
+     * - CWSB_DISABLE_PLUGIN_CACHE=1 (env)
+     */
+    private static function disabled()
+    {
+        if (defined('CWSB_DISABLE_PLUGIN_CACHE') && CWSB_DISABLE_PLUGIN_CACHE) {
+            return true;
+        }
+
+        $raw = getenv('CWSB_DISABLE_PLUGIN_CACHE');
+        if (!is_string($raw)) {
+            return false;
+        }
+
+        $value = strtolower(trim($raw));
+        return in_array($value, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    /**
      * Cache group used by plugin repositories.
      */
     public static function group()
@@ -55,6 +77,11 @@ class CWSB_Cache
      */
     public static function get($key, &$found = false)
     {
+        if (self::disabled()) {
+            $found = false;
+            return null;
+        }
+
         $found = false;
         $cached = wp_cache_get((string) $key, self::group());
         if (!is_array($cached) || !isset($cached['__cwsb_cached'])) {
@@ -76,6 +103,10 @@ class CWSB_Cache
      */
     public static function get_many($keys)
     {
+        if (self::disabled()) {
+            return array();
+        }
+
         $result = array();
         $group = self::group();
         
@@ -113,6 +144,10 @@ class CWSB_Cache
      */
     public static function set($key, $value, $ttl = null)
     {
+        if (self::disabled()) {
+            return true;
+        }
+
         $result = wp_cache_set(
             (string) $key,
             [
@@ -137,6 +172,10 @@ class CWSB_Cache
      */
     public static function set_many($values, $ttl = null)
     {
+        if (self::disabled()) {
+            return is_array($values) ? count($values) : 0;
+        }
+
         $group = self::group();
         $ttl_seconds = $ttl !== null ? (int) $ttl : self::ttl();
         $count = 0;
@@ -168,6 +207,10 @@ class CWSB_Cache
      */
     public static function delete($key)
     {
+        if (self::disabled()) {
+            return true;
+        }
+
         $result = wp_cache_delete((string) $key, self::group());
         self::record_delete($key);
         return $result;
@@ -181,6 +224,10 @@ class CWSB_Cache
      */
     public static function delete_many($keys)
     {
+        if (self::disabled()) {
+            return is_array($keys) ? count($keys) : 0;
+        }
+
         $count = 0;
         foreach ($keys as $key) {
             if (self::delete($key)) {
@@ -203,6 +250,10 @@ class CWSB_Cache
      */
     public static function delete_pattern($pattern)
     {
+        if (self::disabled()) {
+            return 0;
+        }
+
         global $wp_object_cache;
         
         // If using Redis with WP_REDIS_DISABLE_METRICS
@@ -251,6 +302,11 @@ class CWSB_Cache
      */
     public static function get_maybe_stale($key, &$found = false)
     {
+        if (self::disabled()) {
+            $found = false;
+            return null;
+        }
+
         // Try fresh cache first
         $value = self::get($key, $found);
         if ($found) {
@@ -292,6 +348,10 @@ class CWSB_Cache
      */
     public static function remember($key, $callback, $ttl = null, $stale_ttl = null)
     {
+        if (self::disabled()) {
+            return call_user_func($callback);
+        }
+
         // Try fresh cache first
         $value = self::get($key, $found);
         if ($found) {
@@ -336,6 +396,10 @@ class CWSB_Cache
      */
     public static function flush_group()
     {
+        if (self::disabled()) {
+            return;
+        }
+
         wp_cache_flush_group(self::group());
     }
 
