@@ -662,15 +662,26 @@ class CWSB_Product_Repository
     {
         global $wpdb;
 
-        $normalized = CWSB_Utils::normalize_phone($phone);
+        $refs = CWSB_Utils::phone_comparison_refs($phone);
+        $normalized = $refs['canonical'];
         if ($normalized === '') {
             return 0;
         }
 
+        $local8 = $refs['local8'];
+        $legacy216 = $refs['legacy216'];
+
         $table = CWSB_Seller_Repository::state_table_name();
-        // EXACT phone match only - no fallback/partial matching.
         $user_id = (int) $wpdb->get_var(
-            $wpdb->prepare("SELECT user_id FROM {$table} WHERE phone = %s LIMIT 1", $normalized)
+            $wpdb->prepare(
+                "SELECT user_id FROM {$table}
+                 WHERE phone IN (%s, %s)
+                    OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), 8) = %s
+                 LIMIT 1",
+                $local8,
+                $legacy216,
+                $local8
+            )
         );
 
         return $user_id;

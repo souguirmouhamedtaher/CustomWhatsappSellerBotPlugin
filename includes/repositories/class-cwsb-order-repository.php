@@ -802,8 +802,21 @@ class CWSB_Order_Repository
         }
 
         if ($phone !== '') {
+            $refs = CWSB_Utils::phone_comparison_refs($phone);
+            $local8 = $refs['local8'];
+            $legacy216 = $refs['legacy216'];
+
             $by_phone_user_id = (int) $wpdb->get_var(
-                $wpdb->prepare("SELECT user_id FROM {$state_table} WHERE phone = %s ORDER BY id DESC LIMIT 1", $phone)
+                $wpdb->prepare(
+                    "SELECT user_id FROM {$state_table}
+                     WHERE phone IN (%s, %s)
+                        OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), 8) = %s
+                     ORDER BY id DESC
+                     LIMIT 1",
+                    $local8,
+                    $legacy216,
+                    $local8
+                )
             );
 
             if ($by_phone_user_id > 0) {

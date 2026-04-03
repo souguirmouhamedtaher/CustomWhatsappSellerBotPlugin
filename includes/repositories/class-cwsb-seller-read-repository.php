@@ -47,10 +47,14 @@ class CWSB_Seller_Read_Repository
     {
         global $wpdb;
 
-        $normalized = CWSB_Utils::normalize_phone($phone);
+        $refs = CWSB_Utils::phone_comparison_refs($phone);
+        $normalized = $refs['canonical'];
         if ($normalized === '') {
             return null;
         }
+
+        $local8 = $refs['local8'];
+        $legacy216 = $refs['legacy216'];
 
         $cache_key = self::seller_phone_cache_key($normalized);
         $cache_hit = false;
@@ -61,7 +65,15 @@ class CWSB_Seller_Read_Repository
 
         $table = self::state_table_name();
         $user_id = (int) $wpdb->get_var(
-            $wpdb->prepare("SELECT user_id FROM {$table} WHERE phone = %s LIMIT 1", $normalized)
+            $wpdb->prepare(
+                "SELECT user_id FROM {$table}
+                 WHERE phone IN (%s, %s)
+                    OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), 8) = %s
+                 LIMIT 1",
+                $local8,
+                $legacy216,
+                $local8
+            )
         );
 
         if ($user_id > 0) {
@@ -82,14 +94,20 @@ class CWSB_Seller_Read_Repository
             INNER JOIN {$wpdb->usermeta} um_phone ON um_phone.user_id = u.ID
             INNER JOIN {$wpdb->usermeta} um_caps ON um_caps.user_id = u.ID
             WHERE um_phone.meta_key IN ('billing_phone', 'phone', 'wcfm_phone')
-              AND um_phone.meta_value = %s
+              AND um_phone.meta_value IN (%s, %s)
               AND um_caps.meta_key = %s
               AND um_caps.meta_value LIKE %s
             LIMIT 1
         ";
 
         $row = $wpdb->get_row(
-            $wpdb->prepare($sql_exact, $normalized, $cap_key, self::vendor_capability_like()),
+            $wpdb->prepare(
+                $sql_exact,
+                $local8,
+                $legacy216,
+                $cap_key,
+                self::vendor_capability_like()
+            ),
             ARRAY_A
         );
 
@@ -104,14 +122,24 @@ class CWSB_Seller_Read_Repository
                 INNER JOIN {$wpdb->usermeta} um_phone ON um_phone.user_id = u.ID
                 INNER JOIN {$wpdb->usermeta} um_caps ON um_caps.user_id = u.ID
                 WHERE um_phone.meta_key IN ('billing_phone', 'phone', 'wcfm_phone')
-                  AND REPLACE(REPLACE(REPLACE(um_phone.meta_value, '+', ''), ' ', ''), '-', '') = %s
+                  AND (
+                        REPLACE(REPLACE(REPLACE(um_phone.meta_value, '+', ''), ' ', ''), '-', '') IN (%s, %s)
+                     OR RIGHT(REPLACE(REPLACE(REPLACE(um_phone.meta_value, '+', ''), ' ', ''), '-', ''), 8) = %s
+                  )
                   AND um_caps.meta_key = %s
                   AND um_caps.meta_value LIKE %s
                 LIMIT 1
             ";
 
             $row = $wpdb->get_row(
-                $wpdb->prepare($sql_normalized, $normalized, $cap_key, self::vendor_capability_like()),
+                $wpdb->prepare(
+                    $sql_normalized,
+                    $local8,
+                    $legacy216,
+                    $local8,
+                    $cap_key,
+                    self::vendor_capability_like()
+                ),
                 ARRAY_A
             );
         }
@@ -262,21 +290,31 @@ class CWSB_Seller_Read_Repository
 
     public static function find_state_seller_by_phone($phone)
     {
-        $normalized = CWSB_Utils::normalize_phone($phone);
+        $refs = CWSB_Utils::phone_comparison_refs($phone);
+        $normalized = $refs['canonical'];
         if ($normalized === '') {
             return null;
         }
 
+        $local8 = $refs['local8'];
+        $legacy216 = $refs['legacy216'];
+
         return CWSB_Cache::with_cache(
             'seller-state-by-phone',
             $normalized,
-            function () use ($normalized) {
+            function () use ($normalized, $local8, $legacy216) {
                 global $wpdb;
                 $table = self::state_table_name();
                 $row = $wpdb->get_row(
                     $wpdb->prepare(
-                        "SELECT user_id, name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until, auth_portal_sent_at FROM {$table} WHERE phone = %s LIMIT 1",
-                        $normalized
+                        "SELECT user_id, name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until, auth_portal_sent_at
+                         FROM {$table}
+                         WHERE phone IN (%s, %s)
+                            OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), 8) = %s
+                         LIMIT 1",
+                        $local8,
+                        $legacy216,
+                        $local8
                     ),
                     ARRAY_A
                 );

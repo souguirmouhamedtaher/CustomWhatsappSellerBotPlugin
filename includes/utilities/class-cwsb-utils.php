@@ -220,7 +220,31 @@ class CWSB_Utils
 
     public static function normalize_phone($phone)
     {
-        return preg_replace('/\D+/', '', (string) $phone);
+        $digits = preg_replace('/\D+/', '', (string) $phone);
+        if (!is_string($digits) || $digits === '') {
+            return '';
+        }
+
+        // Handle Tunisia numbers in a canonical international format without plus (216 + 8 digits).
+        // Examples:
+        // - +21650354773  -> 21650354773
+        // - 21650354773   -> 21650354773
+        // - 0021650354773 -> 21650354773
+        // - 50354773      -> 21650354773
+        if (strpos($digits, '00216') === 0 && strlen($digits) === 13) {
+            return substr($digits, 2);
+        }
+
+        if (strpos($digits, '216') === 0 && strlen($digits) === 11) {
+            return $digits;
+        }
+
+        if (strlen($digits) === 8) {
+            return '216' . $digits;
+        }
+
+        // Tunisia-only plugin: reject any other format instead of guessing.
+        return '';
     }
 
     public static function extract_phone_from_flow_token($flow_token)
@@ -236,6 +260,32 @@ class CWSB_Utils
 
         $raw = isset($matches[1]) ? (string) $matches[1] : '';
         return self::normalize_phone($raw);
+    }
+
+    // Builds stable phone references for tolerant comparisons against mixed historical data.
+    public static function phone_comparison_refs($phone)
+    {
+        $canonical = self::normalize_phone($phone);
+        if ($canonical === '') {
+            return [
+                'canonical' => '',
+                'local8' => '',
+                'legacy216' => '',
+            ];
+        }
+
+        $local8 = (strlen($canonical) === 11 && strpos($canonical, '216') === 0)
+            ? substr($canonical, -8)
+            : $canonical;
+        $legacy216 = (strlen($local8) === 8)
+            ? ('216' . $local8)
+            : $canonical;
+
+        return [
+            'canonical' => $canonical,
+            'local8' => $local8,
+            'legacy216' => $legacy216,
+        ];
     }
 
     public static function to_money_string($value)
