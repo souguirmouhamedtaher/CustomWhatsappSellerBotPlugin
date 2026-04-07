@@ -38,6 +38,11 @@ class CWSB_Cache
         return $normalized === '' ? null : $normalized;
     }
 
+    private static function stale_key($key)
+    {
+        return $key . '__stale';
+    }
+
     public static function group()
     {
         return 'cwsb';
@@ -146,6 +151,8 @@ class CWSB_Cache
             $ttl !== null ? (int) $ttl : self::ttl()
         );
 
+        wp_cache_delete(self::stale_key($cache_key), self::group());
+
         CWSB_Cache_Metrics::record_set();
         return $result;
     }
@@ -176,6 +183,7 @@ class CWSB_Cache
                 $ttl_seconds
             );
             if ($success) {
+                wp_cache_delete(self::stale_key($cache_key), $group);
                 $count++;
                 CWSB_Cache_Metrics::record_set();
             }
@@ -195,7 +203,9 @@ class CWSB_Cache
             return false;
         }
 
-        $result = wp_cache_delete($cache_key, self::group());
+        $group = self::group();
+        wp_cache_delete(self::stale_key($cache_key), $group);
+        $result = wp_cache_delete($cache_key, $group);
         CWSB_Cache_Metrics::record_delete();
         return $result;
     }
@@ -226,30 +236,7 @@ class CWSB_Cache
 
     public static function get_maybe_stale($key, &$found = false)
     {
-        if (self::disabled()) {
-            $found = false;
-            return null;
-        }
-
-        $cache_key = self::normalize_key($key);
-        if ($cache_key === null) {
-            $found = false;
-            return null;
-        }
-
-        $value = self::get($cache_key, $found);
-        if ($found) {
-            return $value;
-        }
-
-        $stale_data = wp_cache_get($cache_key . '__stale', self::group());
-        if (is_array($stale_data) && isset($stale_data['__cwsb_cached'])) {
-            $found = true;
-            error_log('CWSB_Cache: Returned stale data for key=' . $cache_key);
-            return array_key_exists('value', $stale_data) ? $stale_data['value'] : null;
-        }
-
-        return null;
+        return self::get($key, $found);
     }
 
     public static function remember($key, $callback, $ttl = null, $stale_ttl = null)
@@ -272,27 +259,9 @@ class CWSB_Cache
             $value = call_user_func($callback);
             self::set($cache_key, $value, $ttl);
 
-            if ($stale_ttl === null) {
-                $stale_ttl = self::stale_ttl();
-            }
-
-            wp_cache_set(
-                $cache_key . '__stale',
-                [
-                    '__cwsb_cached' => 1,
-                    'value' => $value,
-                ],
-                self::group(),
-                $stale_ttl
-            );
-
             return $value;
         } catch (Exception $e) {
             error_log('CWSB_Cache: Computation failed for key=' . $cache_key . ', error=' . $e->getMessage());
-            $stale_data = self::get_maybe_stale($cache_key, $found);
-            if ($found) {
-                return $stale_data;
-            }
             throw $e;
         }
     }

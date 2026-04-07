@@ -314,6 +314,10 @@ class CWSB_Add_Product_Support_Service
 
             $metadata = wp_generate_attachment_metadata((int) $attach_id, $upload['file']);
             wp_update_attachment_metadata((int) $attach_id, $metadata);
+            wp_update_post([
+                'ID' => (int) $attach_id,
+                'post_parent' => $pid,
+            ]);
 
             $saved_ids[] = (int) $attach_id;
         }

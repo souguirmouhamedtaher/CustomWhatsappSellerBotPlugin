@@ -390,6 +390,11 @@ class CWSB_Add_Product_Actions_Service
                 return CWSB_Response::error('invalid_category', 'Unable to resolve category/subcategory mapping.', 422);
             }
             wp_set_object_terms($product_id, array_map('intval', $category_term_ids), 'product_cat');
+            $term_taxonomy_ids = wp_get_object_terms($product_id, 'product_cat', ['fields' => 'tt_ids']);
+            if (!is_wp_error($term_taxonomy_ids) && !empty($term_taxonomy_ids)) {
+                wp_update_term_count_now(array_map('intval', $term_taxonomy_ids), 'product_cat');
+            }
+            clean_term_cache(array_map('intval', $category_term_ids), 'product_cat');
 
             if ($idempotency_key !== '') {
                 update_post_meta($product_id, '_cwsb_idempotency_key', $idempotency_key);
@@ -419,6 +424,31 @@ class CWSB_Add_Product_Actions_Service
             update_post_meta($product_id, '_cwsb_color', $color);
             update_post_meta($product_id, '_cwsb_size', $size);
 
+            $product_attributes = [];
+            if ($color !== '') {
+                $product_attributes['cwsb_color'] = [
+                    'name' => 'Couleur',
+                    'value' => $color,
+                    'position' => 0,
+                    'is_visible' => 1,
+                    'is_variation' => 0,
+                    'is_taxonomy' => 0,
+                ];
+            }
+            if ($size !== '') {
+                $product_attributes['cwsb_size'] = [
+                    'name' => 'Taille',
+                    'value' => $size,
+                    'position' => 1,
+                    'is_visible' => 1,
+                    'is_variation' => 0,
+                    'is_taxonomy' => 0,
+                ];
+            }
+            if (!empty($product_attributes)) {
+                update_post_meta($product_id, '_product_attributes', $product_attributes);
+            }
+
             $category_label = CWSB_Utils::normalize_text(isset($product['category_label']) ? $product['category_label'] : '');
             $subcategory_label = CWSB_Utils::normalize_text(isset($product['subcategory_label']) ? $product['subcategory_label'] : '');
             if ($category_label !== '') {
@@ -438,6 +468,15 @@ class CWSB_Add_Product_Actions_Service
             }
 
             clean_post_cache($product_id);
+            if (function_exists('wc_delete_product_transients')) {
+                wc_delete_product_transients($product_id);
+            }
+            if (function_exists('wc_get_product')) {
+                $wc_product = wc_get_product($product_id);
+                if ($wc_product && method_exists($wc_product, 'read_meta_data')) {
+                    $wc_product->read_meta_data(true);
+                }
+            }
 
             return CWSB_Response::ok([
                 'product_id' => (string) $product_id,

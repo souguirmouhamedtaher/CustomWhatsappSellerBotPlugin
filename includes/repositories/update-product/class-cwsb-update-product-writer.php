@@ -99,11 +99,60 @@ class CWSB_Update_Product_Writer
             update_post_meta($product_id, '_cwsb_weight_unit', sanitize_text_field($data['weight_unit']));
         }
 
-        if (isset($data['color'])) {
-            update_post_meta($product_id, '_cwsb_color', CWSB_Utils::normalize_text($data['color']));
+        $color_updated = array_key_exists('color', $data);
+        $size_updated = array_key_exists('size', $data);
+        $color_value = '';
+        $size_value = '';
+
+        if ($color_updated) {
+            $color_value = CWSB_Utils::normalize_text($data['color']);
+            update_post_meta($product_id, '_cwsb_color', $color_value);
         }
-        if (isset($data['size'])) {
-            update_post_meta($product_id, '_cwsb_size', CWSB_Utils::normalize_text($data['size']));
+        if ($size_updated) {
+            $size_value = CWSB_Utils::normalize_text($data['size']);
+            update_post_meta($product_id, '_cwsb_size', $size_value);
+        }
+        if ($color_updated || $size_updated) {
+            $product_attributes = get_post_meta($product_id, '_product_attributes', true);
+            if (!is_array($product_attributes)) {
+                $product_attributes = [];
+            }
+
+            if ($color_updated) {
+                if ($color_value !== '') {
+                    $product_attributes['cwsb_color'] = [
+                        'name' => 'Couleur',
+                        'value' => $color_value,
+                        'position' => 0,
+                        'is_visible' => 1,
+                        'is_variation' => 0,
+                        'is_taxonomy' => 0,
+                    ];
+                } else {
+                    unset($product_attributes['cwsb_color']);
+                }
+            }
+
+            if ($size_updated) {
+                if ($size_value !== '') {
+                    $product_attributes['cwsb_size'] = [
+                        'name' => 'Taille',
+                        'value' => $size_value,
+                        'position' => 1,
+                        'is_visible' => 1,
+                        'is_variation' => 0,
+                        'is_taxonomy' => 0,
+                    ];
+                } else {
+                    unset($product_attributes['cwsb_size']);
+                }
+            }
+
+            if (!empty($product_attributes)) {
+                update_post_meta($product_id, '_product_attributes', $product_attributes);
+            } else {
+                delete_post_meta($product_id, '_product_attributes');
+            }
         }
 
         if (!empty($data['category_id'])) {
@@ -119,6 +168,11 @@ class CWSB_Update_Product_Writer
                 }
 
                 wp_set_object_terms($product_id, $term_ids, 'product_cat');
+                $term_taxonomy_ids = wp_get_object_terms($product_id, 'product_cat', ['fields' => 'tt_ids']);
+                if (!is_wp_error($term_taxonomy_ids) && !empty($term_taxonomy_ids)) {
+                    wp_update_term_count_now(array_map('intval', $term_taxonomy_ids), 'product_cat');
+                }
+                clean_term_cache(array_map('intval', $term_ids), 'product_cat');
 
                 if (!empty($data['category_label'])) {
                     update_post_meta($product_id, '_cwsb_category_label', CWSB_Utils::normalize_text($data['category_label']));
@@ -150,6 +204,15 @@ class CWSB_Update_Product_Writer
         }
 
         clean_post_cache($product_id);
+        if (function_exists('wc_delete_product_transients')) {
+            wc_delete_product_transients($product_id);
+        }
+        if (function_exists('wc_get_product')) {
+            $wc_product = wc_get_product($product_id);
+            if ($wc_product && method_exists($wc_product, 'read_meta_data')) {
+                $wc_product->read_meta_data(true);
+            }
+        }
 
         if (class_exists('CWSB_Product_Repository') && class_exists('CWSB_Seller_Read_Repository')) {
             $vendor = CWSB_Seller_Read_Repository::find_vendor_by_user_id($seller_user_id);
@@ -242,6 +305,10 @@ class CWSB_Update_Product_Writer
 
             $metadata = wp_generate_attachment_metadata((int) $attach_id, $upload['file']);
             wp_update_attachment_metadata((int) $attach_id, $metadata);
+            wp_update_post([
+                'ID' => (int) $attach_id,
+                'post_parent' => $product_id,
+            ]);
 
             $saved_ids[] = (int) $attach_id;
             $count++;
