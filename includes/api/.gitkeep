@@ -1,0 +1,9 @@
+# Future: Separate endpoint files by resource
+#
+# Planned structure:
+# - class-sellers-endpoint.php (GET seller, POST state update)
+# - class-products-endpoint.php (GET products by seller)
+# - class-orders-endpoint.php (GET orders, counters, articles)
+# - class-auth-endpoint.php (POST auth flow)
+#
+# Current: All endpoints in includes/controllers/ and includes/services/

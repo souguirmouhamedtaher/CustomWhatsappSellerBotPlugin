@@ -1,0 +1,476 @@
+﻿<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+if (!class_exists('CWSB_Utils')) {
+    require_once __DIR__ . '/../../utilities/class-cwsb-utils.php';
+}
+
+if (!class_exists('CWSB_Logger')) {
+    require_once __DIR__ . '/../../utilities/class-cwsb-logger.php';
+}
+
+/**
+ * Shared helper logic for add-product flow.
+ */
+class CWSB_Add_Product_Support_Service
+{
+    public static function normalize_status($value)
+    {
+        $status = strtolower(CWSB_Utils::normalize_text($value));
+        $allowed = ['draft', 'publish', 'pending', 'private'];
+        return in_array($status, $allowed, true) ? $status : 'draft';
+    }
+
+    public static function get_pricing_config()
+    {
+        $exchange_rate = (float) get_option('cwsb_eur_exchange_rate', 3.358);
+        if ($exchange_rate <= 0) {
+            $exchange_rate = 3.358;
+        }
+
+        $fixed_markup = (float) get_option('cwsb_eur_fixed_markup', 9);
+        $rounding_decimals = (int) get_option('cwsb_eur_rounding_decimals', 2);
+        $rounding_decimals = max(0, min($rounding_decimals, 4));
+
+        return [
+            'exchange_rate' => $exchange_rate,
+            'fixed_markup_eur' => $fixed_markup,
+            'rounding_decimals' => $rounding_decimals,
+        ];
+    }
+
+    public static function convert_tnd_to_eur($tnd, $config = [])
+    {
+        $safe_tnd = self::to_positive_float($tnd);
+        if ($safe_tnd <= 0) {
+            return 0;
+        }
+
+        $exchange_rate = isset($config['exchange_rate']) ? (float) $config['exchange_rate'] : 3.358;
+        $fixed_markup = isset($config['fixed_markup_eur']) ? (float) $config['fixed_markup_eur'] : 9;
+        $rounding_decimals = isset($config['rounding_decimals']) ? (int) $config['rounding_decimals'] : 2;
+
+        if ($exchange_rate <= 0) {
+            $exchange_rate = 3.358;
+        }
+
+        $rounding_decimals = max(0, min($rounding_decimals, 4));
+        $eur = ($safe_tnd / $exchange_rate) + $fixed_markup;
+        $result = round($eur, $rounding_decimals);
+
+        CWSB_Logger::debug('convert_tnd_to_eur', [
+            'tnd'        => $safe_tnd,
+            'rate'       => $exchange_rate,
+            'markup'     => $fixed_markup,
+            'decimals'   => $rounding_decimals,
+            'eur'        => $result,
+        ]);
+
+        return $result;
+    }
+
+    public static function convert_tnd_to_eur_live($regular_tnd, $promo_tnd, $config = [])
+    {
+        if (!function_exists('wmc_get_price')) {
+            return null;
+        }
+
+        if (!class_exists('WOOMULTI_CURRENCY_Data')) {
+            return null;
+        }
+
+        try {
+            $settings = WOOMULTI_CURRENCY_Data::get_ins();
+            if (!$settings || !method_exists($settings, 'get_list_currencies')) {
+                return null;
+            }
+
+            $currencies = $settings->get_list_currencies();
+            if (!is_array($currencies) || !isset($currencies['EUR'])) {
+                return null;
+            }
+
+            if (!isset($currencies['TND'], $currencies['EUR'])) {
+                return null;
+            }
+
+            $rate_eur = isset($currencies['EUR']['rate']) ? (float) $currencies['EUR']['rate'] : 0;
+            $rate_tnd = isset($currencies['TND']['rate']) ? (float) $currencies['TND']['rate'] : 0;
+
+            if ($rate_eur <= 0) {
+                $rate_eur = function_exists('wmc_get_exchange_rate') ? (float) wmc_get_exchange_rate('EUR') : 0;
+            }
+
+            if ($rate_tnd <= 0) {
+                $rate_tnd = function_exists('wmc_get_exchange_rate') ? (float) wmc_get_exchange_rate('TND') : 0;
+            }
+
+            if ($rate_eur <= 0 || $rate_tnd <= 0) {
+                return null;
+            }
+
+            $eur_per_tnd = $rate_eur / $rate_tnd;
+            if ($eur_per_tnd <= 0) {
+                return null;
+            }
+
+            $eur_decimals = isset($currencies['EUR']['decimals']) ? absint($currencies['EUR']['decimals']) : 2;
+            $eur_decimals = max(0, min($eur_decimals, 4));
+            $fixed_markup = isset($config['fixed_markup_eur']) ? (float) $config['fixed_markup_eur'] : 9;
+
+            $regular_eur = $regular_tnd > 0
+                ? round(($regular_tnd * $eur_per_tnd) + $fixed_markup, $eur_decimals)
+                : 0;
+            $promo_eur = $promo_tnd > 0
+                ? round(($promo_tnd * $eur_per_tnd) + $fixed_markup, $eur_decimals)
+                : 0;
+
+            return [
+                'regular_eur' => $regular_eur,
+                'promo_eur' => $promo_eur,
+                'rate' => $eur_per_tnd,
+            ];
+        } catch (Throwable $e) {
+            CWSB_Logger::error('convert_tnd_to_eur_live threw exception', ['message' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    public static function to_price_string($value)
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        $raw = str_replace(',', '.', (string) $value);
+        $num = is_numeric($raw) ? (float) $raw : 0;
+        if ($num <= 0) {
+            return '';
+        }
+        return self::format_decimal_string($num, 2);
+    }
+
+    public static function to_positive_float($value)
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        $raw = str_replace(',', '.', (string) $value);
+        if (!is_numeric($raw)) {
+            return 0.0;
+        }
+
+        $num = (float) $raw;
+        return $num > 0 ? $num : 0.0;
+    }
+
+    public static function to_dimension_string($value)
+    {
+        $raw = str_replace(',', '.', (string) $value);
+        $num = is_numeric($raw) ? (float) $raw : 0;
+        if ($num <= 0) {
+            return '';
+        }
+        return self::format_decimal_string($num, 3);
+    }
+
+    public static function format_decimal_string($value, $decimals)
+    {
+        $num = is_numeric($value) ? (float) $value : 0.0;
+        if ($num <= 0) {
+            return '';
+        }
+
+        $precision = max(0, min(6, (int) $decimals));
+        return number_format($num, $precision, '.', '');
+    }
+
+    public static function resolve_product_category_term($value, $create_if_missing = false, $parent_id = 0)
+    {
+        $value = CWSB_Utils::normalize_text($value);
+        if ($value === '') {
+            return null;
+        }
+
+        $taxonomy = 'product_cat';
+
+        if (ctype_digit($value)) {
+            $term = get_term((int) $value, $taxonomy);
+            if ($term instanceof WP_Term && !is_wp_error($term)) {
+                return $term;
+            }
+        }
+
+        $slug = sanitize_title($value);
+        $term = get_term_by('slug', $slug, $taxonomy);
+        if (!$term) {
+            $term = get_term_by('name', $value, $taxonomy);
+        }
+
+        if (!$term || is_wp_error($term)) {
+            if (!$create_if_missing) {
+                return null;
+            }
+
+            $insert_args = ['slug' => $slug];
+            if ((int) $parent_id > 0) {
+                $insert_args['parent'] = (int) $parent_id;
+            }
+
+            $inserted = wp_insert_term(ucwords(str_replace(['-', '_'], ' ', $value)), $taxonomy, $insert_args);
+            if (is_wp_error($inserted) || !isset($inserted['term_id'])) {
+                CWSB_Logger::warning('resolve_product_category_term: wp_insert_term failed', [
+                    'value'     => $value,
+                    'parent_id' => $parent_id,
+                    'wp_error'  => is_wp_error($inserted) ? $inserted->get_error_message() : 'missing term_id',
+                ]);
+                return null;
+            }
+            $created = get_term((int) $inserted['term_id'], $taxonomy);
+            return $created instanceof WP_Term ? $created : null;
+        }
+
+        return $term instanceof WP_Term ? $term : null;
+    }
+
+    public static function resolve_product_category_term_ids($category_id, $subcategory_id = '')
+    {
+        $category_term = self::resolve_product_category_term($category_id, true);
+        if (!($category_term instanceof WP_Term)) {
+            CWSB_Logger::warning('resolve_product_category_term_ids: category not resolved', ['category_id' => $category_id]);
+            return [];
+        }
+
+        $term_ids = [(int) $category_term->term_id];
+        $subcategory_value = CWSB_Utils::normalize_text($subcategory_id);
+        if ($subcategory_value === '') {
+            return $term_ids;
+        }
+
+        $subcategory_term = self::resolve_product_category_term(
+            $subcategory_value,
+            true,
+            (int) $category_term->term_id
+        );
+        if (!($subcategory_term instanceof WP_Term)) {
+            return $term_ids;
+        }
+
+        if ((int) $subcategory_term->parent > 0 && (int) $subcategory_term->parent !== (int) $category_term->term_id) {
+            return [];
+        }
+
+        $term_ids[] = (int) $subcategory_term->term_id;
+        return array_values(array_unique(array_map('intval', $term_ids)));
+    }
+
+    public static function save_images_for_product($product_id, $images_base64)
+    {
+        $pid = (int) $product_id;
+        if ($pid <= 0 || !is_array($images_base64) || empty($images_base64)) {
+            return [];
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+
+        $saved_ids = [];
+        $max_images = min(6, count($images_base64));
+
+        for ($i = 0; $i < $max_images; $i++) {
+            $raw = isset($images_base64[$i]) ? (string) $images_base64[$i] : '';
+            if (trim($raw) === '') {
+                continue;
+            }
+
+            $raw = preg_replace('/^data:image\/[a-zA-Z0-9.+-]+;base64,/', '', $raw);
+            $bin = base64_decode($raw, true);
+            if ($bin === false || $bin === '') {
+                continue;
+            }
+
+            $filename = 'cwsb-product-' . $pid . '-' . ($i + 1) . '-' . time() . '.jpg';
+            $upload = wp_upload_bits($filename, null, $bin);
+            if (!empty($upload['error'])) {
+                continue;
+            }
+
+            $attachment = [
+                'post_mime_type' => 'image/jpeg',
+                'post_title' => sanitize_text_field(pathinfo($filename, PATHINFO_FILENAME)),
+                'post_content' => '',
+                'post_status' => 'inherit',
+            ];
+
+            $attach_id = wp_insert_attachment($attachment, $upload['file'], $pid);
+            if (!$attach_id || is_wp_error($attach_id)) {
+                continue;
+            }
+
+            $metadata = wp_generate_attachment_metadata((int) $attach_id, $upload['file']);
+            wp_update_attachment_metadata((int) $attach_id, $metadata);
+
+            $saved_ids[] = (int) $attach_id;
+        }
+
+        return $saved_ids;
+    }
+
+    public static function find_product_id_by_idempotency_key($idempotency_key)
+    {
+        global $wpdb;
+
+        $key = CWSB_Utils::normalize_text($idempotency_key);
+        if ($key === '') {
+            return 0;
+        }
+
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s ORDER BY post_id DESC LIMIT 1",
+                '_cwsb_idempotency_key',
+                $key
+            )
+        );
+    }
+
+    public static function validate_create_payload($product)
+    {
+        $p = is_array($product) ? $product : [];
+        $errors = [];
+
+        $name = CWSB_Utils::normalize_text(isset($p['name']) ? $p['name'] : '');
+        if ($name === '') {
+            $errors[] = [
+                'field' => 'product.name',
+                'code' => 'required',
+                'message' => 'Product name is required.',
+            ];
+        }
+
+        $category_id = CWSB_Utils::normalize_text(isset($p['category_id']) ? $p['category_id'] : '');
+        if ($category_id === '') {
+            $errors[] = [
+                'field' => 'product.category_id',
+                'code' => 'required',
+                'message' => 'Product category is required.',
+            ];
+        }
+
+        $quantity = isset($p['quantity']) ? (int) $p['quantity'] : (isset($p['quantite']) ? (int) $p['quantite'] : 0);
+        if ($quantity <= 0) {
+            $errors[] = [
+                'field' => 'product.quantity',
+                'code' => 'invalid_range',
+                'message' => 'Quantity must be greater than zero.',
+            ];
+        }
+
+        $pricing = isset($p['pricing']) && is_array($p['pricing']) ? $p['pricing'] : [];
+        $regular_tnd = self::to_positive_float(
+            isset($pricing['regular_tnd']) ? $pricing['regular_tnd'] :
+            (isset($pricing['prix_regulier_tnd']) ? $pricing['prix_regulier_tnd'] :
+            (isset($p['prix_regulier_tnd']) ? $p['prix_regulier_tnd'] : null))
+        );
+        $promo_tnd = self::to_positive_float(
+            isset($pricing['promo_tnd']) ? $pricing['promo_tnd'] :
+            (isset($pricing['prix_promo_tnd']) ? $pricing['prix_promo_tnd'] :
+            (isset($p['prix_promo_tnd']) ? $p['prix_promo_tnd'] : null))
+        );
+        $regular_eur = self::to_positive_float(
+            isset($pricing['regular_eur']) ? $pricing['regular_eur'] :
+            (isset($pricing['prix_regulier_eur']) ? $pricing['prix_regulier_eur'] :
+            (isset($p['prix_regulier_eur']) ? $p['prix_regulier_eur'] : null))
+        );
+        $promo_eur = self::to_positive_float(
+            isset($pricing['promo_eur']) ? $pricing['promo_eur'] :
+            (isset($pricing['prix_promo_eur']) ? $pricing['prix_promo_eur'] :
+            (isset($p['prix_promo_eur']) ? $p['prix_promo_eur'] : null))
+        );
+
+        if ($regular_tnd <= 0 && $regular_eur <= 0) {
+            $errors[] = [
+                'field' => 'product.pricing.regular',
+                'code' => 'required',
+                'message' => 'A regular price (TND or EUR) is required.',
+            ];
+        }
+
+        if ($regular_tnd > 0 && $promo_tnd > 0 && $promo_tnd >= $regular_tnd) {
+            $errors[] = [
+                'field' => 'product.pricing.promo_tnd',
+                'code' => 'invalid_range',
+                'message' => 'Promo TND must be strictly lower than regular TND.',
+            ];
+        }
+
+        if ($promo_tnd > 0 && $regular_tnd <= 0) {
+            $errors[] = [
+                'field' => 'product.pricing.regular_tnd',
+                'code' => 'required',
+                'message' => 'Regular TND is required when promo TND is provided.',
+            ];
+        }
+
+        if ($regular_eur > 0 && $promo_eur > 0 && $promo_eur >= $regular_eur) {
+            $errors[] = [
+                'field' => 'product.pricing.promo_eur',
+                'code' => 'invalid_range',
+                'message' => 'Promo EUR must be strictly lower than regular EUR.',
+            ];
+        }
+
+        if ($promo_eur > 0 && $regular_eur <= 0) {
+            $errors[] = [
+                'field' => 'product.pricing.regular_eur',
+                'code' => 'required',
+                'message' => 'Regular EUR is required when promo EUR is provided.',
+            ];
+        }
+
+        return $errors;
+    }
+
+    public static function generate_auto_sku($prefix, $seller_user_id)
+    {
+        global $wpdb;
+
+        $vendor = strtoupper(CWSB_Utils::normalize_text($prefix));
+        if ($vendor === '' || $vendor === 'GEN') {
+            $vendor = 'VENDOR';
+        }
+
+        $full_prefix = 'CWSB-' . $vendor;
+
+        $pattern = $full_prefix . '-%';
+        $latest_sku = $wpdb->get_var($wpdb->prepare(
+            "SELECT DISTINCT meta_value FROM {$wpdb->postmeta} pm
+             INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+             WHERE pm.meta_key = %s
+             AND meta_value LIKE %s
+             AND p.post_author = %d
+             AND p.post_type = 'product'
+             ORDER BY meta_value DESC
+             LIMIT 1",
+            '_sku',
+            $pattern,
+            (int) $seller_user_id
+        ));
+
+        $next_seq = 1;
+        if ($latest_sku) {
+            $parts = explode('-', (string) $latest_sku);
+            if (count($parts) >= 3) {
+                $last_num = (int) end($parts);
+                $next_seq = $last_num + 1;
+            }
+        }
+
+        return sprintf('%s-%03d', $full_prefix, $next_seq);
+    }
+}

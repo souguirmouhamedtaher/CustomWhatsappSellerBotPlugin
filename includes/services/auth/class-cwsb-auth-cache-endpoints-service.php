@@ -1,19 +1,19 @@
-<?php
+﻿<?php
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
 if (!class_exists('CWSB_Response')) {
-    require_once __DIR__ . '/../utilities/class-cwsb-response.php';
+    require_once __DIR__ . '/../../utilities/class-cwsb-response.php';
 }
 
 if (!class_exists('CWSB_Cache')) {
-    require_once __DIR__ . '/../utilities/class-cwsb-cache.php';
+    require_once __DIR__ . '/../../utilities/class-cwsb-cache.php';
 }
 
 if (!class_exists('CWSB_Utils')) {
-    require_once __DIR__ . '/../utilities/class-cwsb-utils.php';
+    require_once __DIR__ . '/../../utilities/class-cwsb-utils.php';
 }
 
 /**

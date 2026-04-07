@@ -1,19 +1,19 @@
-<?php
+﻿<?php
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
 if (!class_exists('CWSB_Update_Product_Repository')) {
-    require_once __DIR__ . '/../repositories/class-cwsb-update-product-repository.php';
+    require_once __DIR__ . '/../../repositories/update-product/class-cwsb-update-product-repository.php';
 }
 
 if (!class_exists('CWSB_Seller_Read_Repository')) {
-    require_once __DIR__ . '/../repositories/class-cwsb-seller-read-repository.php';
+    require_once __DIR__ . '/../../repositories/seller/class-cwsb-seller-read-repository.php';
 }
 
 if (!class_exists('CWSB_Utils')) {
-    require_once __DIR__ . '/../utilities/class-cwsb-utils.php';
+    require_once __DIR__ . '/../../utilities/class-cwsb-utils.php';
 }
 
 /**

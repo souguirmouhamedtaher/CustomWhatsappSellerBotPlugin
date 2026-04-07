@@ -1,0 +1,297 @@
+[2026-04-07 00:10:02] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:10:02] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:10:03] [INFO] [0.218 Ko] API success response | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', status=200, data={"type":"array","count":5,"keys":["page","per_page","total","count","sellers"]}
+[2026-04-07 00:10:03] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:10:03] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:10:12] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:10:12] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:10:24] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone', has_api_key_header=true
+[2026-04-07 00:10:24] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone'
+[2026-04-07 00:10:32] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:10:32] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:10:39] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:10:39] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:10:46] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:10:46] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:10:54] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:10:54] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:11:04] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:11:04] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:11:05] [INFO] [0.218 Ko] API success response | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', status=200, data={"type":"array","count":5,"keys":["page","per_page","total","count","sellers"]}
+[2026-04-07 00:11:05] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:11:05] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:11:16] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:11:16] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:11:25] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:11:25] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:11:31] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:11:31] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:11:37] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:11:37] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:11:44] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:11:44] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:11:49] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:11:49] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:11:51] [INFO] [0.189 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', status=200, data={"type":"array","count":1,"keys":["seller"]}
+[2026-04-07 00:11:51] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:11:51] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:11:57] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:11:57] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:11:57] [INFO] [0.216 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', status=200, data={"type":"array","count":2,"keys":["count","categories"]}
+[2026-04-07 00:11:57] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:11:57] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:12:03] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:12:03] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:12:03] [INFO] [0.222 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', status=200, data={"type":"array","count":3,"keys":["regular_eur","promo_eur","config"]}
+[2026-04-07 00:12:03] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:12:03] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:12:08] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:12:08] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:12:08] [WARNING] [0.258 Ko] API error response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', status=404, code='seller_not_found', message='Seller not found for the given flow token.', details_count=0
+[2026-04-07 00:12:08] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:12:08] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:12:13] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:12:13] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:12:13] [INFO] [0.194 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', status=200, data={"type":"array","count":1,"keys":["entry"]}
+[2026-04-07 00:12:13] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:12:13] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:12:18] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:12:18] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:18:03] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:18:03] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:18:04] [INFO] [0.218 Ko] API success response | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', status=200, data={"type":"array","count":5,"keys":["page","per_page","total","count","sellers"]}
+[2026-04-07 00:18:04] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:18:04] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:18:11] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:18:11] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:18:17] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone', has_api_key_header=true
+[2026-04-07 00:18:17] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone'
+[2026-04-07 00:18:24] [INFO] [0.157 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token', has_api_key_header=true
+[2026-04-07 00:18:24] [DEBUG] [0.131 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token'
+[2026-04-07 00:18:32] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:18:32] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:18:38] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:18:38] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:18:44] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:18:44] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:18:52] [INFO] [0.166 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token', has_api_key_header=true
+[2026-04-07 00:18:52] [DEBUG] [0.140 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token'
+[2026-04-07 00:18:58] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:18:58] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:18:58] [INFO] [0.164 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', has_api_key_header=true
+[2026-04-07 00:18:58] [DEBUG] [0.138 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token'
+[2026-04-07 00:18:59] [INFO] [0.218 Ko] API success response | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', status=200, data={"type":"array","count":5,"keys":["page","per_page","total","count","sellers"]}
+[2026-04-07 00:18:59] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:18:59] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:19:03] [INFO] [0.173 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', has_api_key_header=true
+[2026-04-07 00:19:03] [DEBUG] [0.146 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token'
+[2026-04-07 00:19:04] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:19:04] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:19:09] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone', has_api_key_header=true
+[2026-04-07 00:19:09] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone'
+[2026-04-07 00:19:11] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:19:11] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:19:16] [INFO] [0.157 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token', has_api_key_header=true
+[2026-04-07 00:19:16] [DEBUG] [0.131 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token'
+[2026-04-07 00:19:17] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:19:17] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:19:19] [INFO] [0.218 Ko] API success response | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', status=200, data={"type":"array","count":5,"keys":["page","per_page","total","count","sellers"]}
+[2026-04-07 00:19:19] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:19:19] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:19:24] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:19:24] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:19:27] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:19:27] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:19:35] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:19:35] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:19:39] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:19:39] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:19:40] [INFO] [0.218 Ko] API success response | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', status=200, data={"type":"array","count":5,"keys":["page","per_page","total","count","sellers"]}
+[2026-04-07 00:19:40] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:19:40] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:19:43] [INFO] [0.166 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token', has_api_key_header=true
+[2026-04-07 00:19:43] [DEBUG] [0.140 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token'
+[2026-04-07 00:19:48] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:19:48] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:19:48] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:19:48] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:19:49] [INFO] [0.218 Ko] API success response | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', status=200, data={"type":"array","count":5,"keys":["page","per_page","total","count","sellers"]}
+[2026-04-07 00:19:49] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:19:49] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:19:51] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:19:51] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:19:56] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone', has_api_key_header=true
+[2026-04-07 00:19:56] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone'
+[2026-04-07 00:19:56] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:19:56] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:19:59] [INFO] [0.164 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', has_api_key_header=true
+[2026-04-07 00:19:59] [DEBUG] [0.138 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token'
+[2026-04-07 00:20:03] [INFO] [0.157 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:03] [DEBUG] [0.131 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token'
+[2026-04-07 00:20:04] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone', has_api_key_header=true
+[2026-04-07 00:20:04] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone'
+[2026-04-07 00:20:06] [INFO] [0.173 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:06] [DEBUG] [0.146 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token'
+[2026-04-07 00:20:10] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:20:10] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:20:12] [INFO] [0.157 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:12] [DEBUG] [0.131 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token'
+[2026-04-07 00:20:14] [INFO] [0.169 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:14] [DEBUG] [0.143 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token'
+[2026-04-07 00:20:20] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:20:20] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:20:22] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:20:22] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:20:23] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:20:23] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:20:28] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:20:28] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:20:28] [INFO] [0.166 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:28] [DEBUG] [0.140 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token'
+[2026-04-07 00:20:29] [INFO] [0.218 Ko] API success response | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', status=200, data={"type":"array","count":5,"keys":["page","per_page","total","count","sellers"]}
+[2026-04-07 00:20:29] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:20:29] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:20:31] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:20:31] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:20:31] [INFO] [0.160 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get', has_api_key_header=true
+[2026-04-07 00:20:32] [DEBUG] [0.134 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get'
+[2026-04-07 00:20:37] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:37] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:20:37] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:20:37] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:20:39] [INFO] [0.166 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:39] [DEBUG] [0.140 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token'
+[2026-04-07 00:20:45] [INFO] [0.164 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:45] [DEBUG] [0.138 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token'
+[2026-04-07 00:20:45] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone', has_api_key_header=true
+[2026-04-07 00:20:45] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone'
+[2026-04-07 00:20:47] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:47] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:20:53] [INFO] [0.173 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:53] [DEBUG] [0.146 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token'
+[2026-04-07 00:20:53] [INFO] [0.157 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:53] [DEBUG] [0.131 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token'
+[2026-04-07 00:20:55] [INFO] [0.164 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', has_api_key_header=true
+[2026-04-07 00:20:55] [DEBUG] [0.138 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token'
+[2026-04-07 00:21:01] [INFO] [0.169 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token', has_api_key_header=true
+[2026-04-07 00:21:01] [DEBUG] [0.143 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token'
+[2026-04-07 00:21:01] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:21:01] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:21:02] [INFO] [0.173 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', has_api_key_header=true
+[2026-04-07 00:21:02] [DEBUG] [0.146 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token'
+[2026-04-07 00:21:09] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:21:09] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:21:10] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:21:10] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:21:11] [INFO] [0.169 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token', has_api_key_header=true
+[2026-04-07 00:21:11] [DEBUG] [0.143 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token'
+[2026-04-07 00:21:16] [INFO] [0.160 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get', has_api_key_header=true
+[2026-04-07 00:21:16] [DEBUG] [0.134 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get'
+[2026-04-07 00:21:17] [INFO] [0.166 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token', has_api_key_header=true
+[2026-04-07 00:21:17] [DEBUG] [0.140 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token'
+[2026-04-07 00:21:18] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:21:18] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:21:25] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:21:25] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:21:27] [INFO] [0.160 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get', has_api_key_header=true
+[2026-04-07 00:21:27] [DEBUG] [0.134 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get'
+[2026-04-07 00:21:32] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:21:32] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:21:32] [INFO] [0.189 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', status=200, data={"type":"array","count":1,"keys":["seller"]}
+[2026-04-07 00:21:32] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:21:32] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:21:34] [INFO] [0.164 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', has_api_key_header=true
+[2026-04-07 00:21:34] [DEBUG] [0.138 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token'
+[2026-04-07 00:21:40] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:21:40] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:21:41] [INFO] [0.189 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', status=200, data={"type":"array","count":1,"keys":["seller"]}
+[2026-04-07 00:21:41] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:21:41] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:21:52] [INFO] [0.209 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', status=200, data={"type":"array","count":2,"keys":["count","orders"]}
+[2026-04-07 00:21:52] [INFO] [0.164 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', has_api_key_header=true
+[2026-04-07 00:21:52] [DEBUG] [0.138 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token'
+[2026-04-07 00:21:59] [INFO] [0.173 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', has_api_key_header=true
+[2026-04-07 00:21:59] [DEBUG] [0.146 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token'
+[2026-04-07 00:22:00] [INFO] [0.212 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', status=200, data={"type":"array","count":1,"keys":["counters"]}
+[2026-04-07 00:22:00] [INFO] [0.173 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', has_api_key_header=true
+[2026-04-07 00:22:00] [DEBUG] [0.146 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token'
+[2026-04-07 00:22:08] [INFO] [0.169 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token', has_api_key_header=true
+[2026-04-07 00:22:08] [DEBUG] [0.143 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token'
+[2026-04-07 00:22:17] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:22:17] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:22:19] [INFO] [0.218 Ko] API success response | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', status=200, data={"type":"array","count":5,"keys":["page","per_page","total","count","sellers"]}
+[2026-04-07 00:22:19] [INFO] [0.146 Ko] Incoming API request | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all', has_api_key_header=true
+[2026-04-07 00:22:19] [DEBUG] [0.120 Ko] API key validated | method='GET', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/all'
+[2026-04-07 00:22:35] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:22:35] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:22:35] [INFO] [0.189 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', status=200, data={"type":"array","count":1,"keys":["seller"]}
+[2026-04-07 00:22:35] [INFO] [0.152 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone', has_api_key_header=true
+[2026-04-07 00:22:35] [DEBUG] [0.126 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-phone'
+[2026-04-07 00:22:36] [INFO] [0.214 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token', status=200, data={"type":"array","count":2,"keys":["count","orders"]}
+[2026-04-07 00:22:36] [INFO] [0.169 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token', has_api_key_header=true
+[2026-04-07 00:22:36] [DEBUG] [0.143 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token'
+[2026-04-07 00:22:42] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone', has_api_key_header=true
+[2026-04-07 00:22:42] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone'
+[2026-04-07 00:22:42] [INFO] [0.195 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone', status=200, data={"type":"array","count":1,"keys":["seller"]}
+[2026-04-07 00:22:43] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone', has_api_key_header=true
+[2026-04-07 00:22:43] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/state/by-phone'
+[2026-04-07 00:22:45] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:22:45] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:22:45] [INFO] [0.194 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', status=200, data={"type":"array","count":1,"keys":["entry"]}
+[2026-04-07 00:22:45] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:22:45] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:22:52] [INFO] [0.157 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token', has_api_key_header=true
+[2026-04-07 00:22:52] [DEBUG] [0.131 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token'
+[2026-04-07 00:22:52] [INFO] [0.194 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token', status=200, data={"type":"array","count":1,"keys":["seller"]}
+[2026-04-07 00:22:52] [INFO] [0.157 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token', has_api_key_header=true
+[2026-04-07 00:22:52] [DEBUG] [0.131 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/by-flow-token'
+[2026-04-07 00:22:54] [INFO] [0.160 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get', has_api_key_header=true
+[2026-04-07 00:22:54] [DEBUG] [0.134 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get'
+[2026-04-07 00:22:54] [INFO] [0.196 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get', status=200, data={"type":"array","count":1,"keys":["entry"]}
+[2026-04-07 00:22:54] [INFO] [0.160 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get', has_api_key_header=true
+[2026-04-07 00:22:54] [DEBUG] [0.134 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get'
+[2026-04-07 00:23:00] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:23:00] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:23:00] [INFO] [0.216 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', status=200, data={"type":"array","count":2,"keys":["count","categories"]}
+[2026-04-07 00:23:00] [INFO] [0.167 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list', has_api_key_header=true
+[2026-04-07 00:23:00] [DEBUG] [0.141 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/categories/list'
+[2026-04-07 00:23:08] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:23:08] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:23:08] [INFO] [0.222 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', status=200, data={"type":"array","count":3,"keys":["regular_eur","promo_eur","config"]}
+[2026-04-07 00:23:08] [INFO] [0.159 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert', has_api_key_header=true
+[2026-04-07 00:23:08] [DEBUG] [0.133 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/pricing/convert'
+[2026-04-07 00:23:15] [INFO] [0.166 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token', has_api_key_header=true
+[2026-04-07 00:23:15] [DEBUG] [0.140 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token'
+[2026-04-07 00:23:16] [INFO] [0.261 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token', status=200, data={"type":"array","count":7,"keys":["count","total","page","per_page","has_more","next_page","products"]}
+[2026-04-07 00:23:16] [INFO] [0.166 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token', has_api_key_header=true
+[2026-04-07 00:23:16] [DEBUG] [0.140 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/products/by-flow-token'
+[2026-04-07 00:23:22] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:23:22] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:23:23] [INFO] [0.223 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', status=200, data={"type":"array","count":2,"keys":["total","products"]}
+[2026-04-07 00:23:23] [INFO] [0.176 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token', has_api_key_header=true
+[2026-04-07 00:23:23] [DEBUG] [0.149 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/product/list-paged/by-flow-token'
+[2026-04-07 00:23:29] [INFO] [0.164 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', has_api_key_header=true
+[2026-04-07 00:23:29] [DEBUG] [0.138 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token'
+[2026-04-07 00:23:48] [INFO] [0.209 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', status=200, data={"type":"array","count":2,"keys":["count","orders"]}
+[2026-04-07 00:23:48] [INFO] [0.164 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token', has_api_key_header=true
+[2026-04-07 00:23:48] [DEBUG] [0.138 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/by-flow-token'
+[2026-04-07 00:23:56] [INFO] [0.173 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', has_api_key_header=true
+[2026-04-07 00:23:56] [DEBUG] [0.146 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token'
+[2026-04-07 00:23:57] [INFO] [0.212 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', status=200, data={"type":"array","count":1,"keys":["counters"]}
+[2026-04-07 00:23:57] [INFO] [0.173 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token', has_api_key_header=true
+[2026-04-07 00:23:57] [DEBUG] [0.146 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/counters/by-flow-token'
+[2026-04-07 00:24:05] [INFO] [0.169 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token', has_api_key_header=true
+[2026-04-07 00:24:05] [DEBUG] [0.143 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token'
+[2026-04-07 00:24:25] [INFO] [0.214 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token', status=200, data={"type":"array","count":2,"keys":["count","orders"]}
+[2026-04-07 00:24:25] [INFO] [0.169 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token', has_api_key_header=true
+[2026-04-07 00:24:25] [DEBUG] [0.143 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/seller/orders/list/by-flow-token'
+[2026-04-07 00:24:33] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:24:33] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:24:33] [INFO] [0.194 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', status=200, data={"type":"array","count":1,"keys":["entry"]}
+[2026-04-07 00:24:33] [INFO] [0.158 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get', has_api_key_header=true
+[2026-04-07 00:24:33] [DEBUG] [0.132 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/auth/warmup/get'
+[2026-04-07 00:24:41] [INFO] [0.160 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get', has_api_key_header=true
+[2026-04-07 00:24:41] [DEBUG] [0.134 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get'
+[2026-04-07 00:24:41] [INFO] [0.196 Ko] API success response | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get', status=200, data={"type":"array","count":1,"keys":["entry"]}
+[2026-04-07 00:24:41] [INFO] [0.160 Ko] Incoming API request | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get', has_api_key_header=true
+[2026-04-07 00:24:41] [DEBUG] [0.134 Ko] API key validated | method='POST', uri='/ILEYCOM/wordpress/wp-json/whatsapp-bot/v1/cache/products/list/get'

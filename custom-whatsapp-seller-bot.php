@@ -10,6 +10,17 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Prevent caching of REST API responses to ensure fresh seller state.
+if (defined('REST_REQUEST') && REST_REQUEST) {
+    nocache_headers();
+    if (!defined('DONOTCACHEPAGE')) {
+        define('DONOTCACHEPAGE', true);
+    }
+    if (!defined('DONOTCACHEDB')) {
+        define('DONOTCACHEDB', true);
+    }
+}
+
 // REST namespace used by all plugin endpoints.
 define('CWSB_NS', 'whatsapp-bot/v1');
 // Absolute plugin directory path used for requiring class files.
@@ -118,18 +129,52 @@ function cwsb_upgrade_schema_if_needed()
 // Load plugin classes grouped by role for easier maintenance.
 $cwsb_class_files = [
     'includes/utilities/class-cwsb-response.php',
+    'includes/utilities/class-cwsb-logger.php',
+    'includes/utilities/class-cwsb-cache-backend.php',
+    'includes/utilities/class-cwsb-cache-metrics.php',
     'includes/utilities/class-cwsb-cache.php',
     'includes/utilities/class-cwsb-utils.php',
     'includes/middleware/class-cwsb-auth-middleware.php',
-    'includes/repositories/class-cwsb-seller-repository.php',
-    'includes/repositories/class-cwsb-order-repository.php',
-    'includes/repositories/class-cwsb-product-repository.php',
-    'includes/services/class-cwsb-pin-service.php',
-    'includes/repositories/class-cwsb-update-product-repository.php',
-    'includes/services/class-cwsb-update-product-service.php',
-    'includes/controllers/class-cwsb-auth-controller.php',
-    'includes/controllers/class-cwsb-add-product-controller.php',
-    'includes/controllers/class-cwsb-update-product-controller.php',
+    // Seller repositories
+    'includes/repositories/seller/class-cwsb-seller-vendor-queries.php',
+    'includes/repositories/seller/class-cwsb-seller-state-queries.php',
+    'includes/repositories/seller/class-cwsb-seller-read-queries.php',
+    'includes/repositories/seller/class-cwsb-seller-read-normalizer.php',
+    'includes/repositories/seller/class-cwsb-seller-read-repository.php',
+    'includes/repositories/seller/class-cwsb-seller-state-cache-invalidator.php',
+    'includes/repositories/seller/class-cwsb-seller-state-writer.php',
+    'includes/repositories/seller/class-cwsb-seller-state-repository.php',
+    'includes/repositories/seller/class-cwsb-seller-repository.php',
+    // Order repositories
+    'includes/repositories/order/class-cwsb-order-queries.php',
+    'includes/repositories/order/class-cwsb-order-mapper.php',
+    'includes/repositories/order/class-cwsb-order-resolver.php',
+    'includes/repositories/order/class-cwsb-order-repository.php',
+    // Product repositories
+    'includes/repositories/product/class-cwsb-product-queries.php',
+    'includes/repositories/product/class-cwsb-product-mapper.php',
+    'includes/repositories/product/class-cwsb-product-resolver.php',
+    'includes/repositories/product/class-cwsb-product-repository.php',
+    // Update-product repositories
+    'includes/repositories/update-product/class-cwsb-update-product-queries.php',
+    'includes/repositories/update-product/class-cwsb-update-product-writer.php',
+    'includes/repositories/update-product/class-cwsb-update-product-repository.php',
+    // Add-product services
+    'includes/services/add-product/class-cwsb-add-product-support-service.php',
+    'includes/services/add-product/class-cwsb-add-product-actions-service.php',
+    // Auth services
+    'includes/services/auth/class-cwsb-pin-service.php',
+    'includes/services/auth/class-cwsb-auth-seller-core-service.php',
+    'includes/services/auth/class-cwsb-auth-product-endpoints-service.php',
+    'includes/services/auth/class-cwsb-auth-order-endpoints-service.php',
+    'includes/services/auth/class-cwsb-auth-cache-endpoints-service.php',
+    'includes/services/auth/class-cwsb-auth-seller-endpoints-service.php',
+    // Update-product services
+    'includes/services/update-product/class-cwsb-update-product-service.php',
+    // Controllers
+    'includes/controllers/auth/class-cwsb-auth-controller.php',
+    'includes/controllers/add-product/class-cwsb-add-product-controller.php',
+    'includes/controllers/update-product/class-cwsb-update-product-controller.php',
 ];
 
 foreach ($cwsb_class_files as $cwsb_relative_path) {

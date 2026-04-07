@@ -4,11 +4,48 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!class_exists('CWSB_Logger')) {
+    require_once __DIR__ . '/class-cwsb-logger.php';
+}
+
 /**
  * Response factory to keep payload shape consistent across endpoints.
  */
 class CWSB_Response
 {
+    private static function requestMeta()
+    {
+        return [
+            'method' => isset($_SERVER['REQUEST_METHOD']) ? (string) $_SERVER['REQUEST_METHOD'] : '',
+            'uri' => isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '',
+        ];
+    }
+
+    private static function dataSummary($data)
+    {
+        if (is_array($data)) {
+            return [
+                'type' => 'array',
+                'count' => count($data),
+                'keys' => array_slice(array_keys($data), 0, 10),
+            ];
+        }
+
+        if (is_object($data)) {
+            $vars = get_object_vars($data);
+            return [
+                'type' => 'object',
+                'count' => count($vars),
+                'keys' => array_slice(array_keys($vars), 0, 10),
+            ];
+        }
+
+        return [
+            'type' => gettype($data),
+            'value' => is_scalar($data) ? $data : null,
+        ];
+    }
+
     private static function corruptionScore($value)
     {
         if (!is_string($value) || $value === '') {
@@ -91,6 +128,11 @@ class CWSB_Response
      */
     public static function ok($data = [], $status = 200)
     {
+        CWSB_Logger::info('API success response', array_merge(self::requestMeta(), [
+            'status' => (int) $status,
+            'data' => self::dataSummary($data),
+        ]));
+
         return self::withUtf8Headers([
             'success' => true,
             'data' => $data,
@@ -102,6 +144,13 @@ class CWSB_Response
      */
     public static function error($code, $message, $status = 400, $details = [])
     {
+        CWSB_Logger::warning('API error response', array_merge(self::requestMeta(), [
+            'status' => (int) $status,
+            'code' => (string) $code,
+            'message' => (string) $message,
+            'details_count' => is_array($details) ? count($details) : 0,
+        ]));
+
         return self::withUtf8Headers([
             'success' => false,
             'error' => [

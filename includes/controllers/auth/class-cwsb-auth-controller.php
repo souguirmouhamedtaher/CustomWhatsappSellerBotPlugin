@@ -1,19 +1,19 @@
-<?php
+﻿<?php
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
 if (!class_exists('CWSB_Auth_Middleware')) {
-    require_once __DIR__ . '/../middleware/class-cwsb-auth-middleware.php';
+    require_once __DIR__ . '/../../middleware/class-cwsb-auth-middleware.php';
 }
 
 if (!class_exists('CWSB_Auth_Seller_Endpoints_Service')) {
-    require_once __DIR__ . '/../services/class-cwsb-auth-seller-endpoints-service.php';
+    require_once __DIR__ . '/../../services/auth/class-cwsb-auth-seller-endpoints-service.php';
 }
 
 if (!class_exists('CWSB_Auth_Cache_Endpoints_Service')) {
-    require_once __DIR__ . '/../services/class-cwsb-auth-cache-endpoints-service.php';
+    require_once __DIR__ . '/../../services/auth/class-cwsb-auth-cache-endpoints-service.php';
 }
 
 /**

@@ -1,23 +1,23 @@
-<?php
+﻿<?php
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
 if (!class_exists('CWSB_Response')) {
-    require_once __DIR__ . '/../utilities/class-cwsb-response.php';
+    require_once __DIR__ . '/../../utilities/class-cwsb-response.php';
 }
 
 if (!class_exists('CWSB_Auth_Middleware')) {
-    require_once __DIR__ . '/../middleware/class-cwsb-auth-middleware.php';
+    require_once __DIR__ . '/../../middleware/class-cwsb-auth-middleware.php';
 }
 
 if (!class_exists('CWSB_Update_Product_Service')) {
-    require_once __DIR__ . '/../services/class-cwsb-update-product-service.php';
+    require_once __DIR__ . '/../../services/update-product/class-cwsb-update-product-service.php';
 }
 
 if (!class_exists('CWSB_Utils')) {
-    require_once __DIR__ . '/../utilities/class-cwsb-utils.php';
+    require_once __DIR__ . '/../../utilities/class-cwsb-utils.php';
 }
 
 /**
