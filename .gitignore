@@ -1,1 +1,9 @@
 /scripts
+
+# Generated plugin logs
+/logs/*.log
+!/logs/.htaccess
+
+# Local request payload fixtures and ad-hoc endpoint test output
+/tests/body*.json
+/tests/unit/results.txt
