@@ -98,7 +98,7 @@ class CWSB_Cache_Probe
     {
         $key   = '_cwsb_probe_' . microtime(true);
         $group = 'cwsb';
-        $value = 'probe_' . wp_rand(1000, 9999);
+        $value = 'probe_' . random_int(1000, 9999);
 
         wp_cache_set($key, $value, $group, 5);
         $found = false;
