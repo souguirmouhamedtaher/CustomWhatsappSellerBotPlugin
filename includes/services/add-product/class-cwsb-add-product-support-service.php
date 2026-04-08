@@ -444,37 +444,48 @@ class CWSB_Add_Product_Support_Service
     {
         global $wpdb;
 
-        $vendor = strtoupper(CWSB_Utils::normalize_text($prefix));
+        $vendor_raw = strtoupper(CWSB_Utils::normalize_text($prefix));
+        $vendor = preg_replace('/[^A-Z0-9]/', '', $vendor_raw);
         if ($vendor === '' || $vendor === 'GEN') {
             $vendor = 'VENDOR';
         }
 
-        $full_prefix = 'CWSB-' . $vendor;
+        $sku_prefix = 'CWSB_' . $vendor;
 
-        $pattern = $full_prefix . '-%';
-        $latest_sku = $wpdb->get_var($wpdb->prepare(
-            "SELECT DISTINCT meta_value FROM {$wpdb->postmeta} pm
-             INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
-             WHERE pm.meta_key = %s
-             AND meta_value LIKE %s
-             AND p.post_author = %d
-             AND p.post_type = 'product'
-             ORDER BY meta_value DESC
-             LIMIT 1",
-            '_sku',
-            $pattern,
-            (int) $seller_user_id
-        ));
-
-        $next_seq = 1;
-        if ($latest_sku) {
-            $parts = explode('-', (string) $latest_sku);
-            if (count($parts) >= 3) {
-                $last_num = (int) end($parts);
-                $next_seq = $last_num + 1;
+        // Random, counter-free SKU format: CWSB_<VENDOR><RANDOM>
+        // Keep retrying on collisions to guarantee uniqueness.
+        $max_attempts = 12;
+        for ($i = 0; $i < $max_attempts; $i++) {
+            $candidate = $sku_prefix . self::random_sku_suffix(8);
+            $exists = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(1) FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s",
+                '_sku',
+                $candidate
+            ));
+            if ($exists === 0) {
+                return $candidate;
             }
         }
 
-        return sprintf('%s-%03d', $full_prefix, $next_seq);
+        // Extremely unlikely fallback: include timestamp to force uniqueness.
+        return $sku_prefix . strtoupper(dechex(time()));
+    }
+
+    /**
+     * Generates an uppercase alpha-numeric random suffix.
+     */
+    private static function random_sku_suffix($length)
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $max_idx = strlen($alphabet) - 1;
+        $size = max(4, (int) $length);
+        $out = '';
+
+        for ($i = 0; $i < $size; $i++) {
+            $idx = random_int(0, $max_idx);
+            $out .= $alphabet[$idx];
+        }
+
+        return $out;
     }
 }

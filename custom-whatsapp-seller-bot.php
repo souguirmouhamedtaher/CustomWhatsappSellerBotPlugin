@@ -32,6 +32,62 @@ require_once CWSB_PLUGIN_DIR . 'includes/utilities/class-cwsb-cache-probe.php';
 CWSB_Cache_Probe::capture('before_class_load');
 
 /**
+ * Ultra-light debug endpoint that bypasses REST route dispatch to reduce memory
+ * pressure on hosts with heavy object-cache integrations.
+ *
+ * URL: /wp-json/whatsapp-bot/v1/debug/cache-state-lite
+ */
+function cwsb_maybe_serve_cache_probe_lite()
+{
+    $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
+    if (strpos($uri, '/wp-json/whatsapp-bot/v1/debug/cache-state-lite') === false) {
+        return;
+    }
+
+    $provided = isset($_SERVER['HTTP_X_API_KEY']) ? trim((string) $_SERVER['HTTP_X_API_KEY']) : '';
+    $expected = '';
+    if (defined('CWSB_API_KEY')) {
+        $expected = trim((string) CWSB_API_KEY);
+    }
+    if ($expected === '') {
+        $expected = trim((string) getenv('WP_PLUGIN_API_KEY'));
+    }
+
+    if ($expected === '' || $provided === '') {
+        status_header(401);
+        header('Content-Type: application/json; charset=utf-8');
+        echo wp_json_encode(['code' => 'cwsb_unauthorized', 'message' => 'Unauthorized']);
+        exit;
+    }
+
+    if (!hash_equals($expected, $provided)) {
+        status_header(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo wp_json_encode(['code' => 'cwsb_forbidden', 'message' => 'Forbidden']);
+        exit;
+    }
+
+    CWSB_Cache_Probe::capture('during_request_lite');
+
+    if (function_exists('nocache_headers')) {
+        nocache_headers();
+    }
+    status_header(200);
+    header('Content-Type: application/json; charset=utf-8');
+    echo wp_json_encode([
+        'server_time' => gmdate('Y-m-d H:i:s') . ' UTC',
+        'php_version' => PHP_VERSION,
+        'snapshots' => array_values(CWSB_Cache_Probe::snapshots()),
+        'notes' => [
+            'endpoint' => 'cache-state-lite',
+            'mode' => 'direct-bootstrap-response',
+            'wp_rest_dispatch' => 'skipped',
+        ],
+    ]);
+    exit;
+}
+
+/**
  * Creates/updates plugin tables on activation.
  *
  * Stores seller flow-related state that is used by WhatsApp auth flow screens.
@@ -187,6 +243,7 @@ foreach ($cwsb_class_files as $cwsb_relative_path) {
 }
 
 CWSB_Cache_Probe::capture('after_class_load');
+cwsb_maybe_serve_cache_probe_lite();
 
 // Ensure state table exists before first API call.
 register_activation_hook(__FILE__, 'cwsb_create_tables');
@@ -198,4 +255,3 @@ add_action('rest_api_init', 'cwsb_upgrade_schema_if_needed', 2);
 add_action('rest_api_init', ['CWSB_Auth_Controller', 'register_routes']);
 add_action('rest_api_init', ['CWSB_Add_Product_Controller', 'register_routes']);
 add_action('rest_api_init', ['CWSB_Update_Product_Controller', 'register_routes']);
-add_action('rest_api_init', ['CWSB_Cache_Probe', 'register_endpoint']);

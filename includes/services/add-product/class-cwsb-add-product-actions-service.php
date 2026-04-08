@@ -332,7 +332,7 @@ class CWSB_Add_Product_Actions_Service
             }
 
             if ($sku !== '') {
-                update_post_meta($product_id, '_sku', $sku);
+                self::replace_product_meta($product_id, '_sku', $sku);
             }
 
             $regular_eur = CWSB_Add_Product_Support_Service::to_price_string(
@@ -346,13 +346,13 @@ class CWSB_Add_Product_Actions_Service
                 (isset($product['prix_promo_eur']) ? $product['prix_promo_eur'] : null))
             );
             if ($regular_eur !== '') {
-                update_post_meta($product_id, '_regular_price', $regular_eur);
+                self::replace_product_meta($product_id, '_regular_price', $regular_eur);
             }
             if ($promo_eur !== '' && (float) $promo_eur > 0) {
-                update_post_meta($product_id, '_sale_price', $promo_eur);
-                update_post_meta($product_id, '_price', $promo_eur);
+                self::replace_product_meta($product_id, '_sale_price', $promo_eur);
+                self::replace_product_meta($product_id, '_price', $promo_eur);
             } elseif ($regular_eur !== '') {
-                update_post_meta($product_id, '_price', $regular_eur);
+                self::replace_product_meta($product_id, '_price', $regular_eur);
             }
 
             $quantity = isset($product['quantity']) ? (int) $product['quantity'] : (isset($product['quantite']) ? (int) $product['quantite'] : 0);
@@ -411,11 +411,15 @@ class CWSB_Add_Product_Actions_Service
                 (isset($product['prix_promo_tnd']) ? $product['prix_promo_tnd'] : null))
             );
             if ($regular_tnd !== '') {
-                update_post_meta($product_id, '_regular_price_tnd', $regular_tnd);
-                update_post_meta($product_id, '_price_tnd', $promo_tnd !== '' ? $promo_tnd : $regular_tnd);
+                self::replace_product_meta($product_id, '_regular_price_tnd', $regular_tnd);
+                self::replace_product_meta($product_id, '_price_tnd', $promo_tnd !== '' ? $promo_tnd : $regular_tnd);
+                // Compatibility mirrors for admin/custom views using non-underscored keys.
+                self::replace_product_meta($product_id, 'regular_price_tnd', $regular_tnd);
+                self::replace_product_meta($product_id, 'price_tnd', $promo_tnd !== '' ? $promo_tnd : $regular_tnd);
             }
             if ($promo_tnd !== '') {
-                update_post_meta($product_id, '_sale_price_tnd', $promo_tnd);
+                self::replace_product_meta($product_id, '_sale_price_tnd', $promo_tnd);
+                self::replace_product_meta($product_id, 'sale_price_tnd', $promo_tnd);
             }
 
             $attributes = isset($product['attributes']) && is_array($product['attributes']) ? $product['attributes'] : [];
@@ -488,6 +492,15 @@ class CWSB_Add_Product_Actions_Service
                 'message' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Replace a postmeta key with exactly one row to avoid duplicate values.
+     */
+    private static function replace_product_meta($product_id, $meta_key, $meta_value)
+    {
+        delete_post_meta($product_id, $meta_key);
+        update_post_meta($product_id, $meta_key, $meta_value);
     }
 
 }

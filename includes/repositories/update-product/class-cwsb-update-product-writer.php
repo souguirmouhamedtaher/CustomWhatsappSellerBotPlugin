@@ -67,12 +67,35 @@ class CWSB_Update_Product_Writer
         ];
         foreach ($price_map as $meta_key => $data_key) {
             if (isset($data[$data_key])) {
-                update_post_meta($product_id, $meta_key, CWSB_Utils::to_money_string($data[$data_key]));
+                self::replace_product_meta($product_id, $meta_key, CWSB_Utils::to_money_string($data[$data_key]));
             }
         }
 
-        if (isset($data['regular_eur'])) {
-            update_post_meta($product_id, '_price', CWSB_Utils::to_money_string($data['regular_eur']));
+        $regular_eur_norm = isset($data['regular_eur']) ? CWSB_Utils::to_money_string($data['regular_eur']) : null;
+        $sale_eur_norm = isset($data['sale_eur']) ? CWSB_Utils::to_money_string($data['sale_eur']) : null;
+        $regular_tnd_norm = isset($data['regular_tnd']) ? CWSB_Utils::to_money_string($data['regular_tnd']) : null;
+        $sale_tnd_norm = isset($data['sale_tnd']) ? CWSB_Utils::to_money_string($data['sale_tnd']) : null;
+
+        // Keep compatibility keys in sync for custom admin views.
+        if (isset($data['regular_tnd'])) {
+            self::replace_product_meta($product_id, 'regular_price_tnd', $regular_tnd_norm);
+        }
+        if (isset($data['sale_tnd'])) {
+            self::replace_product_meta($product_id, 'sale_price_tnd', $sale_tnd_norm);
+        }
+        if (isset($data['regular_tnd']) || isset($data['sale_tnd'])) {
+            $effective_tnd = ($sale_tnd_norm !== null && $sale_tnd_norm !== '')
+                ? $sale_tnd_norm
+                : (($regular_tnd_norm !== null) ? $regular_tnd_norm : CWSB_Utils::to_money_string(get_post_meta($product_id, '_regular_price_tnd', true)));
+            self::replace_product_meta($product_id, '_price_tnd', $effective_tnd);
+            self::replace_product_meta($product_id, 'price_tnd', $effective_tnd);
+        }
+
+        if (isset($data['regular_eur']) || isset($data['sale_eur'])) {
+            $effective_eur = ($sale_eur_norm !== null && $sale_eur_norm !== '')
+                ? $sale_eur_norm
+                : (($regular_eur_norm !== null) ? $regular_eur_norm : CWSB_Utils::to_money_string(get_post_meta($product_id, '_regular_price', true)));
+            self::replace_product_meta($product_id, '_price', $effective_eur);
         }
 
         if (isset($data['stock'])) {
@@ -226,6 +249,15 @@ class CWSB_Update_Product_Writer
         }
 
         return true;
+    }
+
+    /**
+     * Replace a postmeta key with exactly one row to avoid duplicate values.
+     */
+    private static function replace_product_meta($product_id, $meta_key, $meta_value)
+    {
+        delete_post_meta($product_id, $meta_key);
+        update_post_meta($product_id, $meta_key, $meta_value);
     }
 
     /**

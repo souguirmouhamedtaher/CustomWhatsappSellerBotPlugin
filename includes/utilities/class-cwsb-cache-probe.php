@@ -16,6 +16,44 @@ class CWSB_Cache_Probe
     /** @var array<string, array> */
     private static $snapshots = [];
 
+    /**
+     * Returns all captured snapshots.
+     *
+     * @return array<string, array>
+     */
+    public static function snapshots()
+    {
+        return self::$snapshots;
+    }
+
+    /**
+     * Parse PHP shorthand memory values (e.g. 256M, 1G) into bytes.
+     *
+     * @param string $value
+     * @return int|null
+     */
+    private static function parse_memory_bytes($value)
+    {
+        $raw = trim((string) $value);
+        if ($raw === '' || $raw === '-1') {
+            return null;
+        }
+
+        $unit = strtolower(substr($raw, -1));
+        $num  = (float) $raw;
+
+        switch ($unit) {
+            case 'g':
+                return (int) ($num * 1024 * 1024 * 1024);
+            case 'm':
+                return (int) ($num * 1024 * 1024);
+            case 'k':
+                return (int) ($num * 1024);
+            default:
+                return (int) $num;
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Snapshot capture
     // -------------------------------------------------------------------------
@@ -29,7 +67,12 @@ class CWSB_Cache_Probe
     {
         global $wp_object_cache;
 
-        self::$snapshots[$phase] = [
+        $memory_limit_raw   = (string) ini_get('memory_limit');
+        $memory_limit_bytes = self::parse_memory_bytes($memory_limit_raw);
+        $memory_usage_bytes = memory_get_usage(true);
+        $memory_peak_bytes  = memory_get_peak_usage(true);
+
+        $snapshot = [
             'phase'     => $phase,
             'timestamp' => microtime(true),
 
@@ -43,7 +86,9 @@ class CWSB_Cache_Probe
             'object_cache_dropin_exists' => file_exists(WP_CONTENT_DIR . '/object-cache.php'),
 
             // --- cwsb group persistence ---
-            'cwsb_group_non_persistent'  => self::probe_non_persistent_group(),
+            // Intentionally kept as "unknown" to avoid introspecting backend
+            // internals on managed hosts where that can be expensive.
+            'cwsb_group_non_persistent'  => 'unknown',
 
             // --- Relevant constants ---
             'CWSB_DISABLE_PLUGIN_CACHE'  => defined('CWSB_DISABLE_PLUGIN_CACHE')
@@ -53,64 +98,32 @@ class CWSB_Cache_Probe
             'DONOTCACHEPAGE'             => defined('DONOTCACHEPAGE') ? DONOTCACHEPAGE : '(not defined)',
             'DONOTCACHEDB'               => defined('DONOTCACHEDB')   ? DONOTCACHEDB   : '(not defined)',
 
-            // --- Live write/read probe for the cwsb group ---
-            'cache_write_read_test'      => self::probe_cache_rw(),
+            // --- Memory footprint ---
+            'memory_limit_raw'           => $memory_limit_raw,
+            'memory_limit_bytes'         => $memory_limit_bytes,
+            'memory_usage_bytes'         => $memory_usage_bytes,
+            'memory_peak_bytes'          => $memory_peak_bytes,
+
+            // --- Safety marker ---
+            // This probe is intentionally read-only: no wp_cache_set/get/delete.
+            'cache_rw_probe'             => 'skipped_read_only_mode',
         ];
-    }
 
-    // -------------------------------------------------------------------------
-    // Probe helpers
-    // -------------------------------------------------------------------------
+        self::$snapshots[$phase] = $snapshot;
 
-    /**
-     * Check whether the 'cwsb' group is registered as non-persistent in the
-     * active object-cache backend.
-     *
-     * @return bool|null  true = confirmed non-persistent, false = persistent, null = unknown
-     */
-    private static function probe_non_persistent_group()
-    {
-        global $wp_object_cache;
-
-        if (!isset($wp_object_cache) || !is_object($wp_object_cache)) {
-            return null;
-        }
-
-        // Most drop-ins (WP Redis, WP Object Cache, Memcached) expose this property.
-        foreach (['non_persistent_groups', 'non_persistent_cache_groups', 'ignored_groups'] as $prop) {
-            if (property_exists($wp_object_cache, $prop)) {
-                $groups = (array) $wp_object_cache->$prop;
-                return in_array('cwsb', $groups, true);
-            }
-        }
-
-        return null; // property not found on this backend
-    }
-
-    /**
-     * Write a short-lived test value to the 'cwsb' group and read it back.
-     * Tells us whether reads/writes to this group actually persist  within the
-     * same request.
-     *
-     * @return array{wrote: string, read: mixed, found: bool, match: bool}
-     */
-    private static function probe_cache_rw()
-    {
-        $key   = '_cwsb_probe_' . microtime(true);
-        $group = 'cwsb';
-        $value = 'probe_' . random_int(1000, 9999);
-
-        wp_cache_set($key, $value, $group, 5);
-        $found = false;
-        $read  = wp_cache_get($key, $group, false, $found);
-        wp_cache_delete($key, $group);
-
-        return [
-            'wrote' => $value,
-            'read'  => $read,
-            'found' => (bool) $found,
-            'match' => ($read === $value),
-        ];
+        error_log('CWSB cache probe snapshot: ' . wp_json_encode([
+            'phase' => $phase,
+            'wp_object_cache_class' => $snapshot['wp_object_cache_class'],
+            'wp_using_ext_object_cache' => $snapshot['wp_using_ext_object_cache'],
+            'object_cache_dropin_exists' => $snapshot['object_cache_dropin_exists'],
+            'CWSB_DISABLE_PLUGIN_CACHE' => $snapshot['CWSB_DISABLE_PLUGIN_CACHE'],
+            'REST_REQUEST' => $snapshot['REST_REQUEST'],
+            'DONOTCACHEPAGE' => $snapshot['DONOTCACHEPAGE'],
+            'DONOTCACHEDB' => $snapshot['DONOTCACHEDB'],
+            'memory_limit_raw' => $snapshot['memory_limit_raw'],
+            'memory_usage_bytes' => $snapshot['memory_usage_bytes'],
+            'memory_peak_bytes' => $snapshot['memory_peak_bytes'],
+        ]));
     }
 
     // -------------------------------------------------------------------------
@@ -126,8 +139,37 @@ class CWSB_Cache_Probe
         register_rest_route(CWSB_NS, '/debug/cache-state', [
             'methods'             => WP_REST_Server::READABLE,
             'callback'            => [static::class, 'endpoint_response'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'permission_callback' => [static::class, 'allow_debug_endpoint'],
         ]);
+    }
+
+    /**
+     * Lightweight permission check that avoids option/object-cache access.
+     *
+     * @param WP_REST_Request $request
+     * @return true|WP_Error
+     */
+    public static function allow_debug_endpoint(WP_REST_Request $request)
+    {
+        $provided = trim((string) $request->get_header('x-api-key'));
+
+        $expected = '';
+        if (defined('CWSB_API_KEY')) {
+            $expected = trim((string) CWSB_API_KEY);
+        }
+        if ($expected === '') {
+            $expected = trim((string) getenv('WP_PLUGIN_API_KEY'));
+        }
+
+        if ($expected === '' || $provided === '') {
+            return new WP_Error('cwsb_unauthorized', 'Unauthorized', ['status' => 401]);
+        }
+
+        if (!hash_equals($expected, $provided)) {
+            return new WP_Error('cwsb_forbidden', 'Forbidden', ['status' => 403]);
+        }
+
+        return true;
     }
 
     /**
@@ -141,22 +183,16 @@ class CWSB_Cache_Probe
         // Capture live state at the moment the request is served.
         self::capture('during_request');
 
-        global $wpdb;
-
-        // Read the API key directly from DB (bypass object cache, same as the middleware fix).
-        $db_api_key = $wpdb->get_var($wpdb->prepare(
-            "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1",
-            'cwsb_api_key'
-        ));
-
         return new WP_REST_Response([
             'server_time'          => gmdate('Y-m-d H:i:s') . ' UTC',
             'php_version'          => PHP_VERSION,
-            'wp_version'           => get_bloginfo('version'),
-            'cwsb_api_key_in_db'   => $db_api_key !== null
-                                      ? '(present, length=' . strlen((string) $db_api_key) . ')'
-                                      : '(missing/null)',
+            'wp_version'           => null,
             'snapshots'            => array_values(self::$snapshots),
+            'notes'                => [
+                'debug_endpoint_mode' => 'lightweight',
+                'db_reads' => 'skipped',
+                'wp_cache_rw' => 'skipped',
+            ],
         ], 200);
     }
 }
