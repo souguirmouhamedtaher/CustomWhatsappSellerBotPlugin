@@ -26,6 +26,11 @@ define('CWSB_NS', 'whatsapp-bot/v1');
 // Absolute plugin directory path used for requiring class files.
 define('CWSB_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
+// Load cache probe early so it can capture the object-cache state before any
+// plugin classes (which may register non-persistent groups) are required.
+require_once CWSB_PLUGIN_DIR . 'includes/utilities/class-cwsb-cache-probe.php';
+CWSB_Cache_Probe::capture('before_class_load');
+
 /**
  * Creates/updates plugin tables on activation.
  *
@@ -181,6 +186,8 @@ foreach ($cwsb_class_files as $cwsb_relative_path) {
     require_once CWSB_PLUGIN_DIR . $cwsb_relative_path;
 }
 
+CWSB_Cache_Probe::capture('after_class_load');
+
 // Ensure state table exists before first API call.
 register_activation_hook(__FILE__, 'cwsb_create_tables');
 add_action('plugins_loaded', 'cwsb_ensure_tables', 5);
@@ -191,3 +198,4 @@ add_action('rest_api_init', 'cwsb_upgrade_schema_if_needed', 2);
 add_action('rest_api_init', ['CWSB_Auth_Controller', 'register_routes']);
 add_action('rest_api_init', ['CWSB_Add_Product_Controller', 'register_routes']);
 add_action('rest_api_init', ['CWSB_Update_Product_Controller', 'register_routes']);
+add_action('rest_api_init', ['CWSB_Cache_Probe', 'register_endpoint']);

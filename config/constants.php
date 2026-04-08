@@ -45,7 +45,7 @@ if (!defined('CWSB_CACHE_GROUP')) {
 
 /** Disable plugin caching via environment variable CWSB_DISABLE_PLUGIN_CACHE=1 */
 if (!defined('CWSB_DISABLE_PLUGIN_CACHE')) {
-    define('CWSB_DISABLE_PLUGIN_CACHE', false);
+    define('CWSB_DISABLE_PLUGIN_CACHE', true);
 }
 
 // ============================================================================
