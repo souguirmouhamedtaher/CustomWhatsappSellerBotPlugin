@@ -10,81 +10,35 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Prevent caching of REST API responses to ensure fresh seller state.
-if (defined('REST_REQUEST') && REST_REQUEST) {
-    nocache_headers();
+// REST namespace used by all plugin endpoints.
+define('CWSB_NS', 'whatsapp-bot/v1');
+// Absolute plugin directory path used for requiring class files.
+define('CWSB_PLUGIN_DIR', plugin_dir_path(__FILE__));
+
+// Load shared constants so cache flags and TTLs are consistently applied.
+require_once CWSB_PLUGIN_DIR . 'config/constants.php';
+
+/**
+ * Send no-cache headers for this plugin namespace during REST responses.
+ */
+function cwsb_send_rest_no_cache_headers($served, $result, $request, $server)
+{
+    $route = $request instanceof WP_REST_Request ? (string) $request->get_route() : '';
+    if (strpos($route, '/' . CWSB_NS . '/') !== 0) {
+        return $served;
+    }
+
     if (!defined('DONOTCACHEPAGE')) {
         define('DONOTCACHEPAGE', true);
     }
     if (!defined('DONOTCACHEDB')) {
         define('DONOTCACHEDB', true);
     }
-}
-
-// REST namespace used by all plugin endpoints.
-define('CWSB_NS', 'whatsapp-bot/v1');
-// Absolute plugin directory path used for requiring class files.
-define('CWSB_PLUGIN_DIR', plugin_dir_path(__FILE__));
-
-// Load cache probe early so it can capture the object-cache state before any
-// plugin classes (which may register non-persistent groups) are required.
-require_once CWSB_PLUGIN_DIR . 'includes/utilities/class-cwsb-cache-probe.php';
-CWSB_Cache_Probe::capture('before_class_load');
-
-/**
- * Ultra-light debug endpoint that bypasses REST route dispatch to reduce memory
- * pressure on hosts with heavy object-cache integrations.
- *
- * URL: /wp-json/whatsapp-bot/v1/debug/cache-state-lite
- */
-function cwsb_maybe_serve_cache_probe_lite()
-{
-    $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
-    if (strpos($uri, '/wp-json/whatsapp-bot/v1/debug/cache-state-lite') === false) {
-        return;
-    }
-
-    $provided = isset($_SERVER['HTTP_X_API_KEY']) ? trim((string) $_SERVER['HTTP_X_API_KEY']) : '';
-    $expected = '';
-    if (defined('CWSB_API_KEY')) {
-        $expected = trim((string) CWSB_API_KEY);
-    }
-    if ($expected === '') {
-        $expected = trim((string) getenv('WP_PLUGIN_API_KEY'));
-    }
-
-    if ($expected === '' || $provided === '') {
-        status_header(401);
-        header('Content-Type: application/json; charset=utf-8');
-        echo wp_json_encode(['code' => 'cwsb_unauthorized', 'message' => 'Unauthorized']);
-        exit;
-    }
-
-    if (!hash_equals($expected, $provided)) {
-        status_header(403);
-        header('Content-Type: application/json; charset=utf-8');
-        echo wp_json_encode(['code' => 'cwsb_forbidden', 'message' => 'Forbidden']);
-        exit;
-    }
-
-    CWSB_Cache_Probe::capture('during_request_lite');
-
     if (function_exists('nocache_headers')) {
         nocache_headers();
     }
-    status_header(200);
-    header('Content-Type: application/json; charset=utf-8');
-    echo wp_json_encode([
-        'server_time' => gmdate('Y-m-d H:i:s') . ' UTC',
-        'php_version' => PHP_VERSION,
-        'snapshots' => array_values(CWSB_Cache_Probe::snapshots()),
-        'notes' => [
-            'endpoint' => 'cache-state-lite',
-            'mode' => 'direct-bootstrap-response',
-            'wp_rest_dispatch' => 'skipped',
-        ],
-    ]);
-    exit;
+
+    return $served;
 }
 
 /**
@@ -187,63 +141,22 @@ function cwsb_upgrade_schema_if_needed()
     }
 }
 
-// Load plugin classes grouped by role for easier maintenance.
-$cwsb_class_files = [
-    'includes/utilities/class-cwsb-response.php',
-    'includes/utilities/class-cwsb-logger.php',
-    'includes/utilities/class-cwsb-cache-backend.php',
-    'includes/utilities/class-cwsb-cache-metrics.php',
-    'includes/utilities/class-cwsb-cache.php',
-    'includes/utilities/class-cwsb-utils.php',
-    'includes/middleware/class-cwsb-auth-middleware.php',
-    // Seller repositories
-    'includes/repositories/seller/class-cwsb-seller-vendor-queries.php',
-    'includes/repositories/seller/class-cwsb-seller-state-queries.php',
-    'includes/repositories/seller/class-cwsb-seller-read-queries.php',
-    'includes/repositories/seller/class-cwsb-seller-read-normalizer.php',
-    'includes/repositories/seller/class-cwsb-seller-read-repository.php',
-    'includes/repositories/seller/class-cwsb-seller-state-cache-invalidator.php',
-    'includes/repositories/seller/class-cwsb-seller-state-writer.php',
-    'includes/repositories/seller/class-cwsb-seller-state-repository.php',
-    'includes/repositories/seller/class-cwsb-seller-repository.php',
-    // Order repositories
-    'includes/repositories/order/class-cwsb-order-queries.php',
-    'includes/repositories/order/class-cwsb-order-mapper.php',
-    'includes/repositories/order/class-cwsb-order-resolver.php',
-    'includes/repositories/order/class-cwsb-order-repository.php',
-    // Product repositories
-    'includes/repositories/product/class-cwsb-product-queries.php',
-    'includes/repositories/product/class-cwsb-product-mapper.php',
-    'includes/repositories/product/class-cwsb-product-resolver.php',
-    'includes/repositories/product/class-cwsb-product-repository.php',
-    // Update-product repositories
-    'includes/repositories/update-product/class-cwsb-update-product-queries.php',
-    'includes/repositories/update-product/class-cwsb-update-product-writer.php',
-    'includes/repositories/update-product/class-cwsb-update-product-repository.php',
-    // Add-product services
-    'includes/services/add-product/class-cwsb-add-product-support-service.php',
-    'includes/services/add-product/class-cwsb-add-product-actions-service.php',
-    // Auth services
-    'includes/services/auth/class-cwsb-pin-service.php',
-    'includes/services/auth/class-cwsb-auth-seller-core-service.php',
-    'includes/services/auth/class-cwsb-auth-product-endpoints-service.php',
-    'includes/services/auth/class-cwsb-auth-order-endpoints-service.php',
-    'includes/services/auth/class-cwsb-auth-cache-endpoints-service.php',
-    'includes/services/auth/class-cwsb-auth-seller-endpoints-service.php',
-    // Update-product services
-    'includes/services/update-product/class-cwsb-update-product-service.php',
-    // Controllers
-    'includes/controllers/auth/class-cwsb-auth-controller.php',
-    'includes/controllers/add-product/class-cwsb-add-product-controller.php',
-    'includes/controllers/update-product/class-cwsb-update-product-controller.php',
-];
+/**
+ * Lazy-load REST controllers and register plugin routes.
+ *
+ * Keeping this work inside rest_api_init avoids loading the full class graph
+ * for non-REST requests (for example wp-admin pages), lowering memory usage.
+ */
+function cwsb_register_rest_routes()
+{
+    require_once CWSB_PLUGIN_DIR . 'includes/controllers/auth/class-cwsb-auth-controller.php';
+    require_once CWSB_PLUGIN_DIR . 'includes/controllers/add-product/class-cwsb-add-product-controller.php';
+    require_once CWSB_PLUGIN_DIR . 'includes/controllers/update-product/class-cwsb-update-product-controller.php';
 
-foreach ($cwsb_class_files as $cwsb_relative_path) {
-    require_once CWSB_PLUGIN_DIR . $cwsb_relative_path;
+    CWSB_Auth_Controller::register_routes();
+    CWSB_Add_Product_Controller::register_routes();
+    CWSB_Update_Product_Controller::register_routes();
 }
-
-CWSB_Cache_Probe::capture('after_class_load');
-cwsb_maybe_serve_cache_probe_lite();
 
 // Ensure state table exists before first API call.
 register_activation_hook(__FILE__, 'cwsb_create_tables');
@@ -251,7 +164,5 @@ add_action('plugins_loaded', 'cwsb_ensure_tables', 5);
 add_action('plugins_loaded', 'cwsb_upgrade_schema_if_needed', 6);
 add_action('rest_api_init', 'cwsb_ensure_tables', 1);
 add_action('rest_api_init', 'cwsb_upgrade_schema_if_needed', 2);
-// Register REST endpoints under whatsapp-bot/v1.
-add_action('rest_api_init', ['CWSB_Auth_Controller', 'register_routes']);
-add_action('rest_api_init', ['CWSB_Add_Product_Controller', 'register_routes']);
-add_action('rest_api_init', ['CWSB_Update_Product_Controller', 'register_routes']);
+add_action('rest_api_init', 'cwsb_register_rest_routes', 10);
+add_filter('rest_pre_serve_request', 'cwsb_send_rest_no_cache_headers', 10, 4);

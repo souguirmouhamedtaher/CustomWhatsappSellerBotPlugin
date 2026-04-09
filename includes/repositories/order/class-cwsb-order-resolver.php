@@ -4,10 +4,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (!class_exists('CWSB_Cache')) {
-    require_once __DIR__ . '/../../utilities/class-cwsb-cache.php';
-}
-
 if (!class_exists('CWSB_Seller_Repository')) {
     require_once __DIR__ . '/../seller/class-cwsb-seller-repository.php';
 }
@@ -40,26 +36,7 @@ class CWSB_Order_Resolver
             return 0;
         }
 
-        $flow_cache_key = 'order:seller:flow:' . CWSB_Utils::normalize_text($token);
-        $cache_hit = false;
-        $cached = CWSB_Cache::get($flow_cache_key, $cache_hit);
-        if ($cache_hit) {
-            return (int) $cached;
-        }
-
         $phone = CWSB_Utils::extract_phone_from_flow_token($token);
-        $phone_cache_key = self::order_seller_phone_cache_key($phone);
-        if ($phone_cache_key !== '') {
-            $cached_phone = CWSB_Cache::get($phone_cache_key, $cache_hit);
-            if ($cache_hit) {
-                $uid = (int) $cached_phone;
-                if ($uid > 0) {
-                    CWSB_Cache::set($flow_cache_key, $uid);
-                    return $uid;
-                }
-            }
-        }
-
         global $wpdb;
         $state_table = CWSB_Seller_Repository::state_table_name();
 
@@ -69,10 +46,6 @@ class CWSB_Order_Resolver
         );
 
         if ($direct_user_id > 0) {
-            CWSB_Cache::set($flow_cache_key, $direct_user_id);
-            if ($phone_cache_key !== '') {
-                CWSB_Cache::set($phone_cache_key, $direct_user_id);
-            }
             return $direct_user_id;
         }
 
@@ -96,10 +69,6 @@ class CWSB_Order_Resolver
             );
 
             if ($by_phone_user_id > 0) {
-                CWSB_Cache::set($flow_cache_key, $by_phone_user_id);
-                if ($phone_cache_key !== '') {
-                    CWSB_Cache::set($phone_cache_key, $by_phone_user_id);
-                }
                 return $by_phone_user_id;
             }
         }
@@ -110,10 +79,6 @@ class CWSB_Order_Resolver
             if (is_array($seller) && isset($seller['user_id'])) {
                 $uid = (int) $seller['user_id'];
                 if ($uid > 0) {
-                    CWSB_Cache::set($flow_cache_key, $uid);
-                    if ($phone_cache_key !== '') {
-                        CWSB_Cache::set($phone_cache_key, $uid);
-                    }
                     return $uid;
                 }
             }
@@ -125,10 +90,6 @@ class CWSB_Order_Resolver
             if (is_array($seller) && isset($seller['user_id'])) {
                 $uid = (int) $seller['user_id'];
                 if ($uid > 0) {
-                    CWSB_Cache::set($flow_cache_key, $uid);
-                    if ($phone_cache_key !== '') {
-                        CWSB_Cache::set($phone_cache_key, $uid);
-                    }
                     return $uid;
                 }
             }
@@ -176,19 +137,6 @@ class CWSB_Order_Resolver
             'in_delivery' => 0,
             'to_deliver' => 0,
         ];
-    }
-
-    /**
-     * Helper: Get cache key for phone-based seller lookup.
-     */
-    private static function order_seller_phone_cache_key($phone)
-    {
-        $normalized = CWSB_Utils::normalize_phone($phone);
-        if ($normalized === '') {
-            return '';
-        }
-
-        return 'order:seller:phone:' . $normalized;
     }
 
     /**

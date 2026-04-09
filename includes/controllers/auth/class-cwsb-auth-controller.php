@@ -12,10 +12,6 @@ if (!class_exists('CWSB_Auth_Seller_Endpoints_Service')) {
     require_once __DIR__ . '/../../services/auth/class-cwsb-auth-seller-endpoints-service.php';
 }
 
-if (!class_exists('CWSB_Auth_Cache_Endpoints_Service')) {
-    require_once __DIR__ . '/../../services/auth/class-cwsb-auth-cache-endpoints-service.php';
-}
-
 /**
  * Route registration controller for auth-flow endpoints.
  */
@@ -193,58 +189,5 @@ class CWSB_Auth_Controller
             ],
         ]);
 
-        register_rest_route(CWSB_NS, '/cache/auth/warmup/get', [
-            'methods' => 'POST',
-            'callback' => ['CWSB_Auth_Cache_Endpoints_Service', 'get_auth_warmup_cache'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args' => ['flow_token' => ['required' => true]],
-        ]);
-
-        register_rest_route(CWSB_NS, '/cache/auth/warmup/set', [
-            'methods' => 'POST',
-            'callback' => ['CWSB_Auth_Cache_Endpoints_Service', 'set_auth_warmup_cache'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args' => [
-                'flow_token' => ['required' => true],
-                'has_code' => ['required' => true],
-                'prepared_at' => ['required' => false],
-            ],
-        ]);
-
-        register_rest_route(CWSB_NS, '/cache/auth/pending/set', [
-            'methods' => 'POST',
-            'callback' => ['CWSB_Auth_Cache_Endpoints_Service', 'set_auth_pending_cache'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args' => [
-                'flow_token' => ['required' => true],
-                'code' => ['required' => true],
-                'expires_at' => ['required' => false],
-            ],
-        ]);
-
-        register_rest_route(CWSB_NS, '/cache/auth/pending/consume', [
-            'methods' => 'POST',
-            'callback' => ['CWSB_Auth_Cache_Endpoints_Service', 'consume_auth_pending_cache'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args' => ['flow_token' => ['required' => true]],
-        ]);
-
-        register_rest_route(CWSB_NS, '/cache/products/list/get', [
-            'methods' => 'POST',
-            'callback' => ['CWSB_Auth_Cache_Endpoints_Service', 'get_products_list_cache'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args' => ['flow_token' => ['required' => true]],
-        ]);
-
-        register_rest_route(CWSB_NS, '/cache/products/list/set', [
-            'methods' => 'POST',
-            'callback' => ['CWSB_Auth_Cache_Endpoints_Service', 'set_products_list_cache'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args' => [
-                'flow_token' => ['required' => true],
-                'products' => ['required' => true],
-                'prepared_at' => ['required' => false],
-            ],
-        ]);
     }
 }

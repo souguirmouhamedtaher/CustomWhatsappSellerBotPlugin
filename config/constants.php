@@ -25,30 +25,6 @@ if (!defined('CWSB_PLUGIN_DIR')) {
 }
 
 // ============================================================================
-// Caching Configuration
-// ============================================================================
-
-/** Default cache TTL in seconds */
-if (!defined('CWSB_CACHE_TTL')) {
-    define('CWSB_CACHE_TTL', 60);
-}
-
-/** Extended TTL for stale-while-revalidate pattern */
-if (!defined('CWSB_CACHE_STALE_TTL')) {
-    define('CWSB_CACHE_STALE_TTL', 120);
-}
-
-/** Cache group name for all plugin cache entries */
-if (!defined('CWSB_CACHE_GROUP')) {
-    define('CWSB_CACHE_GROUP', 'cwsb');
-}
-
-/** Disable plugin caching via environment variable CWSB_DISABLE_PLUGIN_CACHE=1 */
-if (!defined('CWSB_DISABLE_PLUGIN_CACHE')) {
-    define('CWSB_DISABLE_PLUGIN_CACHE', true);
-}
-
-// ============================================================================
 // Database Configuration
 // ============================================================================
 

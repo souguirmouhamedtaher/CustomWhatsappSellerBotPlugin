@@ -4,10 +4,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (!class_exists('CWSB_Cache')) {
-    require_once __DIR__ . '/../../utilities/class-cwsb-cache.php';
-}
-
 if (!class_exists('CWSB_Utils')) {
     require_once __DIR__ . '/../../utilities/class-cwsb-utils.php';
 }
@@ -60,30 +56,17 @@ class CWSB_Seller_Read_Repository
             return null;
         }
 
-        $cache_key = self::seller_phone_cache_key($normalized);
-        $cache_hit = false;
-        $cached = CWSB_Cache::get($cache_key, $cache_hit);
-        if ($cache_hit) {
-            return $cached;
-        }
-
         $user_id = CWSB_Seller_Read_Queries::find_state_user_id_by_phone_refs($refs);
         if ($user_id > 0) {
-            $seller = self::find_vendor_by_user_id($user_id);
-            CWSB_Cache::set($cache_key, $seller);
-            return $seller;
+            return self::find_vendor_by_user_id($user_id);
         }
 
-        // Suspend WordPress object cache during large user/meta JOINs.
-        wp_suspend_cache_addition(true);
         $row = CWSB_Seller_Read_Queries::find_vendor_row_by_phone_exact($refs);
         if (!$row) {
             $row = CWSB_Seller_Read_Queries::find_vendor_row_by_phone_normalized($refs);
         }
 
         if (!$row) {
-            CWSB_Cache::set($cache_key, null);
-            wp_suspend_cache_addition(false);
             return null;
         }
 
@@ -91,9 +74,6 @@ class CWSB_Seller_Read_Repository
         $row['phone'] = CWSB_Utils::normalize_phone(isset($row['phone']) ? $row['phone'] : '');
         $state = self::get_state_by_user_id($uid);
         $seller = CWSB_Seller_Read_Normalizer::normalize_seller_row(array_merge($row, $state));
-
-        wp_suspend_cache_addition(false);
-        CWSB_Cache::set($cache_key, $seller);
 
         return $seller;
     }
@@ -117,24 +97,14 @@ class CWSB_Seller_Read_Repository
             return null;
         }
 
-        $cache_key = self::seller_user_cache_key($uid);
-        $cache_hit = false;
-        $cached = CWSB_Cache::get($cache_key, $cache_hit);
-        if ($cache_hit) {
-            return $cached;
-        }
-
         $row = CWSB_Seller_Read_Queries::find_vendor_row_by_user_id($uid);
         if (!$row) {
-            CWSB_Cache::set($cache_key, null);
             return null;
         }
 
         $row['phone'] = CWSB_Utils::normalize_phone(isset($row['phone']) ? $row['phone'] : '');
         $state = self::get_state_by_user_id($uid);
-        $seller = CWSB_Seller_Read_Normalizer::normalize_seller_row(array_merge($row, $state));
-        CWSB_Cache::set($cache_key, $seller);
-        return $seller;
+        return CWSB_Seller_Read_Normalizer::normalize_seller_row(array_merge($row, $state));
     }
 
     public static function find_vendor_by_flow_token($flow_token)
@@ -144,22 +114,12 @@ class CWSB_Seller_Read_Repository
             return null;
         }
 
-        $cache_key = self::seller_flow_cache_key($token);
-        $cache_hit = false;
-        $cached = CWSB_Cache::get($cache_key, $cache_hit);
-        if ($cache_hit) {
-            return $cached;
-        }
-
         $user_id = self::find_user_id_by_flow_token($token);
         if ($user_id <= 0) {
-            CWSB_Cache::set($cache_key, null);
             return null;
         }
 
-        $seller = self::find_vendor_by_user_id($user_id);
-        CWSB_Cache::set($cache_key, $seller);
-        return $seller;
+        return self::find_vendor_by_user_id($user_id);
     }
 
     public static function find_state_seller_by_phone($phone)
@@ -170,18 +130,12 @@ class CWSB_Seller_Read_Repository
             return null;
         }
 
-        return CWSB_Cache::with_cache(
-            'seller-state-by-phone',
-            $normalized,
-            function () use ($refs) {
-                $row = CWSB_Seller_Read_Queries::find_state_seller_row_by_phone_refs($refs);
-                if (!is_array($row)) {
-                    return null;
-                }
-                return CWSB_Seller_Read_Normalizer::normalize_seller_row($row);
-            },
-            30
-        );
+        $row = CWSB_Seller_Read_Queries::find_state_seller_row_by_phone_refs($refs);
+        if (!is_array($row)) {
+            return null;
+        }
+
+        return CWSB_Seller_Read_Normalizer::normalize_seller_row($row);
     }
 
     public static function get_all_sellers($page = 1, $per_page = 50)

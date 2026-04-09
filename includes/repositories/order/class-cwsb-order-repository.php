@@ -4,10 +4,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (!class_exists('CWSB_Cache')) {
-    require_once __DIR__ . '/../../utilities/class-cwsb-cache.php';
-}
-
 if (!class_exists('CWSB_Order_Queries')) {
     require_once __DIR__ . '/class-cwsb-order-queries.php';
 }
@@ -49,22 +45,13 @@ class CWSB_Order_Repository
             return [];
         }
 
-        $cache_key = 'order:list:flow:' . $token;
-        $cache_hit = false;
-        $cached = CWSB_Cache::get($cache_key, $cache_hit);
-        if ($cache_hit) {
-            return is_array($cached) ? $cached : [];
-        }
-
         $seller_user_id = CWSB_Order_Resolver::resolve_seller_user_id_by_flow_token($token);
         if ($seller_user_id <= 0) {
-            CWSB_Cache::set($cache_key, []);
             return [];
         }
 
         $order_ids = CWSB_Order_Queries::find_order_ids_for_seller($seller_user_id);
         if (empty($order_ids)) {
-            CWSB_Cache::set($cache_key, []);
             return [];
         }
 
@@ -76,7 +63,6 @@ class CWSB_Order_Repository
             }
         }
 
-        CWSB_Cache::set($cache_key, $orders);
         return $orders;
     }
 
@@ -91,25 +77,14 @@ class CWSB_Order_Repository
             return CWSB_Order_Resolver::empty_order_counters();
         }
 
-        $cache_key = 'order:counters:flow:' . $token;
-        $cache_hit = false;
-        $cached = CWSB_Cache::get($cache_key, $cache_hit);
-        if ($cache_hit && is_array($cached)) {
-            return $cached;
-        }
-
         $seller_user_id = CWSB_Order_Resolver::resolve_seller_user_id_by_flow_token($token);
         if ($seller_user_id <= 0) {
-            $empty = CWSB_Order_Resolver::empty_order_counters();
-            CWSB_Cache::set($cache_key, $empty);
-            return $empty;
+            return CWSB_Order_Resolver::empty_order_counters();
         }
 
         $order_ids = CWSB_Order_Queries::find_order_ids_for_seller($seller_user_id);
         if (empty($order_ids)) {
-            $empty = CWSB_Order_Resolver::empty_order_counters();
-            CWSB_Cache::set($cache_key, $empty);
-            return $empty;
+            return CWSB_Order_Resolver::empty_order_counters();
         }
 
         $rows = CWSB_Order_Queries::find_order_status_rows_by_order_ids($order_ids);
@@ -130,7 +105,6 @@ class CWSB_Order_Repository
             $counters[$status] += $count;
         }
 
-        CWSB_Cache::set($cache_key, $counters);
         error_log('CWSB orders counters built in ' . round((microtime(true) - $started_at) * 1000) . 'ms for token ' . substr($token, -6));
 
         return $counters;
@@ -147,22 +121,13 @@ class CWSB_Order_Repository
             return [];
         }
 
-        $cache_key = 'order:summary:list:flow:' . $token;
-        $cache_hit = false;
-        $cached = CWSB_Cache::get($cache_key, $cache_hit);
-        if ($cache_hit) {
-            return is_array($cached) ? $cached : [];
-        }
-
         $seller_user_id = CWSB_Order_Resolver::resolve_seller_user_id_by_flow_token($token);
         if ($seller_user_id <= 0) {
-            CWSB_Cache::set($cache_key, []);
             return [];
         }
 
         $order_ids = CWSB_Order_Queries::find_order_ids_for_seller($seller_user_id);
         if (empty($order_ids)) {
-            CWSB_Cache::set($cache_key, []);
             return [];
         }
 
@@ -174,7 +139,6 @@ class CWSB_Order_Repository
             }
         }
 
-        CWSB_Cache::set($cache_key, $orders);
         error_log('CWSB orders list summaries built in ' . round((microtime(true) - $started_at) * 1000) . 'ms for token ' . substr($token, -6) . ' count=' . count($orders));
 
         return $orders;
@@ -289,21 +253,12 @@ class CWSB_Order_Repository
             return null;
         }
 
-        $cache_key = 'order:detail:' . $oid;
-        $cache_hit = false;
-        $cached = CWSB_Cache::get($cache_key, $cache_hit);
-        if ($cache_hit) {
-            return $cached;
-        }
-
         $row = CWSB_Order_Queries::find_order_row_by_id($oid);
         if (!is_array($row)) {
-            CWSB_Cache::set($cache_key, null);
             return null;
         }
 
         $mapped = CWSB_Order_Mapper::map_order($row, false);
-        CWSB_Cache::set($cache_key, $mapped);
         return $mapped;
     }
 

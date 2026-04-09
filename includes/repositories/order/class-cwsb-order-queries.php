@@ -49,9 +49,6 @@ class CWSB_Order_Queries
             return [];
         }
 
-        // Suspend WordPress object cache during large order ID lookups.
-        wp_suspend_cache_addition(true);
-
         $lookup_table = $wpdb->prefix . 'wc_order_product_lookup';
         if (self::table_exists($lookup_table)) {
             $product_placeholders = self::build_placeholders(count($product_ids), '%d');
@@ -77,7 +74,6 @@ class CWSB_Order_Queries
             $rows = $wpdb->get_col($wpdb->prepare($sql, ...$params));
             $ids = self::sanitize_int_ids($rows);
             if (!empty($ids)) {
-                wp_suspend_cache_addition(false);
                 return $ids;
             }
         }
@@ -113,9 +109,6 @@ class CWSB_Order_Queries
         $rows = $wpdb->get_col($wpdb->prepare($sql, ...$params));
         $ids = self::sanitize_int_ids($rows);
 
-        // Re-enable WordPress object cache after large result processing.
-        wp_suspend_cache_addition(false);
-
         return $ids;
     }
 
@@ -134,9 +127,6 @@ class CWSB_Order_Queries
             return [];
         }
 
-        // Suspend WordPress object cache during status aggregation query.
-        wp_suspend_cache_addition(true);
-
         $placeholders = self::build_placeholders(count($ids), '%d');
         $sql = "
             SELECT post_status, COUNT(*) AS order_count
@@ -146,10 +136,7 @@ class CWSB_Order_Queries
         ";
 
         $rows = $wpdb->get_results($wpdb->prepare($sql, ...$ids), ARRAY_A);
-        
-        // Re-enable WordPress object cache.
-        wp_suspend_cache_addition(false);
-        
+
         return is_array($rows) ? $rows : [];
     }
 
