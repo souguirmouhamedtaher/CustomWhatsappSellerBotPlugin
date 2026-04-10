@@ -134,7 +134,7 @@ class CWSB_Add_Product_Actions_Service
             return CWSB_Response::error('invalid_request', 'category_id is required.', 422);
         }
 
-        $parent_term = self::resolve_product_category_term($category_id, false);
+        $parent_term = CWSB_Add_Product_Support_Service::resolve_product_category_term($category_id, false);
         if (!($parent_term instanceof WP_Term)) {
             return CWSB_Response::ok([
                 'count' => 0,
