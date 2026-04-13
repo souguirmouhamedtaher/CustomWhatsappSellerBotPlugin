@@ -413,13 +413,17 @@ class CWSB_Add_Product_Actions_Service
             if ($regular_tnd !== '') {
                 self::replace_product_meta($product_id, '_regular_price_tnd', $regular_tnd);
                 self::replace_product_meta($product_id, '_price_tnd', $promo_tnd !== '' ? $promo_tnd : $regular_tnd);
+                self::replace_product_meta($product_id, '_regular_price_wmcp', self::build_wmcp_tnd_json($regular_tnd));
                 // Compatibility mirrors for admin/custom views using non-underscored keys.
                 self::replace_product_meta($product_id, 'regular_price_tnd', $regular_tnd);
                 self::replace_product_meta($product_id, 'price_tnd', $promo_tnd !== '' ? $promo_tnd : $regular_tnd);
             }
             if ($promo_tnd !== '') {
                 self::replace_product_meta($product_id, '_sale_price_tnd', $promo_tnd);
+                self::replace_product_meta($product_id, '_sale_price_wmcp', self::build_wmcp_tnd_json($promo_tnd));
                 self::replace_product_meta($product_id, 'sale_price_tnd', $promo_tnd);
+            } else {
+                delete_post_meta($product_id, '_sale_price_wmcp');
             }
 
             $attributes = isset($product['attributes']) && is_array($product['attributes']) ? $product['attributes'] : [];
@@ -501,6 +505,23 @@ class CWSB_Add_Product_Actions_Service
     {
         delete_post_meta($product_id, $meta_key);
         update_post_meta($product_id, $meta_key, $meta_value);
+    }
+
+    /**
+     * Builds WMCP-compatible TND JSON payload (e.g. {"TND":"100"}).
+     */
+    private static function build_wmcp_tnd_json($amount)
+    {
+        $normalized = CWSB_Utils::to_money_string($amount);
+        if ($normalized === '') {
+            return '';
+        }
+
+        $payload = wp_json_encode([
+            'TND' => (string) $normalized,
+        ]);
+
+        return is_string($payload) ? $payload : '{"TND":"' . $normalized . '"}';
     }
 
 }

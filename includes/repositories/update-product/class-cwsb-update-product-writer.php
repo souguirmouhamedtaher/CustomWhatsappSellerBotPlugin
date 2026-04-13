@@ -79,9 +79,19 @@ class CWSB_Update_Product_Writer
         // Keep compatibility keys in sync for custom admin views.
         if (isset($data['regular_tnd'])) {
             self::replace_product_meta($product_id, 'regular_price_tnd', $regular_tnd_norm);
+            self::replace_or_delete_product_meta(
+                $product_id,
+                '_regular_price_wmcp',
+                self::build_wmcp_tnd_json($regular_tnd_norm)
+            );
         }
         if (isset($data['sale_tnd'])) {
             self::replace_product_meta($product_id, 'sale_price_tnd', $sale_tnd_norm);
+            self::replace_or_delete_product_meta(
+                $product_id,
+                '_sale_price_wmcp',
+                self::build_wmcp_tnd_json($sale_tnd_norm)
+            );
         }
         if (isset($data['regular_tnd']) || isset($data['sale_tnd'])) {
             $effective_tnd = ($sale_tnd_norm !== null && $sale_tnd_norm !== '')
@@ -258,6 +268,34 @@ class CWSB_Update_Product_Writer
     {
         delete_post_meta($product_id, $meta_key);
         update_post_meta($product_id, $meta_key, $meta_value);
+    }
+
+    /**
+     * Replaces a meta key when value is non-empty, otherwise deletes it.
+     */
+    private static function replace_or_delete_product_meta($product_id, $meta_key, $meta_value)
+    {
+        delete_post_meta($product_id, $meta_key);
+        if ($meta_value !== null && $meta_value !== '') {
+            update_post_meta($product_id, $meta_key, $meta_value);
+        }
+    }
+
+    /**
+     * Builds WMCP-compatible TND JSON payload (e.g. {"TND":"100"}).
+     */
+    private static function build_wmcp_tnd_json($amount)
+    {
+        $normalized = CWSB_Utils::to_money_string($amount);
+        if ($normalized === '') {
+            return '';
+        }
+
+        $payload = wp_json_encode([
+            'TND' => (string) $normalized,
+        ]);
+
+        return is_string($payload) ? $payload : '{"TND":"' . $normalized . '"}';
     }
 
     /**
