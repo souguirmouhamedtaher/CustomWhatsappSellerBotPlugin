@@ -194,7 +194,6 @@ class CWSB_Seller_State_Queries
               AND s.phone <> ''
               AND s.session_active_until IS NOT NULL
               AND s.session_active_until > 0
-              AND s.session_active_until > %d
               AND s.session_active_until <= %d
               AND (
                     s.auth_portal_sent_at IS NULL
@@ -208,7 +207,6 @@ class CWSB_Seller_State_Queries
             $sql,
             $cap_key,
             $vendor_capability_like,
-            $now_ms,
             $lead_window_end_ms,
             $lead_window_ms,
             $limit,
