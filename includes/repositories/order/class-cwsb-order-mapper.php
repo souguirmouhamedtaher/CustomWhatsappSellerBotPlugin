@@ -121,12 +121,29 @@ class CWSB_Order_Mapper
             $line_total = (float) ($item['line_total'] ?? 0);
             $unit_price = $qty > 0 ? ($line_total / $qty) : 0.0;
 
+            $price_tnd = '';
+            if ($variation_id > 0) {
+                $price_tnd = trim((string) get_post_meta($variation_id, '_price_tnd', true));
+                if ($price_tnd === '' && $product_id > 0) {
+                    $price_tnd = CWSB_Utils::decode_wmcp_tnd(
+                        get_post_meta($product_id, '_regular_price_wmcp', true),
+                        get_post_meta($product_id, '_regular_price_tnd', true)
+                    );
+                }
+            } elseif ($product_id > 0) {
+                $price_tnd = CWSB_Utils::decode_wmcp_tnd(
+                    get_post_meta($product_id, '_regular_price_wmcp', true),
+                    get_post_meta($product_id, '_regular_price_tnd', true)
+                );
+            }
+
             $articles[] = [
                 'id' => (string) ($effective_product_id > 0 ? $effective_product_id : $item_id),
                 'name' => CWSB_Utils::normalize_text(isset($item['order_item_name']) ? $item['order_item_name'] : ''),
                 'sku' => CWSB_Utils::normalize_text($effective_product_id > 0 ? get_post_meta($effective_product_id, '_sku', true) : ''),
                 'quantity' => $qty,
                 'price' => (float) $unit_price,
+                'price_tnd' => $price_tnd,
                 'currency' => $currency,
                 'image' => CWSB_Utils::normalize_text($image_url),
             ];

@@ -77,6 +77,8 @@ class CWSB_Product_Queries
                 MAX(CASE WHEN pm.meta_key = '_sale_price' THEN pm.meta_value END) AS sale_price,
                 MAX(CASE WHEN pm.meta_key = '_regular_price_tnd' THEN pm.meta_value END) AS regular_price_tnd,
                 MAX(CASE WHEN pm.meta_key = '_sale_price_tnd' THEN pm.meta_value END) AS sale_price_tnd,
+                MAX(CASE WHEN pm.meta_key = '_regular_price_wmcp' THEN pm.meta_value END) AS regular_price_wmcp,
+                MAX(CASE WHEN pm.meta_key = '_sale_price_wmcp'    THEN pm.meta_value END) AS sale_price_wmcp,
                 MAX(CASE WHEN pm.meta_key = '_stock' THEN pm.meta_value END) AS stock,
                 MAX(CASE WHEN pm.meta_key = '_manage_stock' THEN pm.meta_value END) AS manage_stock,
                 MAX(CASE WHEN pm.meta_key = '_thumbnail_id' THEN pm.meta_value END) AS thumbnail_id,

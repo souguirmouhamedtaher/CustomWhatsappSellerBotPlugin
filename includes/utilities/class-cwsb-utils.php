@@ -349,4 +349,26 @@ class CWSB_Utils
     {
         return (int) round(microtime(true) * 1000);
     }
+
+    /**
+     * Decode a WMCP TND meta value (JSON string like {"TND":"100"}) and return
+     * the raw TND amount string. Falls back to $legacy_fallback when the JSON
+     * is absent, empty, or malformed.
+     *
+     * @param string $meta_json       Raw meta_value from _regular_price_wmcp / _sale_price_wmcp.
+     * @param string $legacy_fallback Value of the old _regular_price_tnd / _sale_price_tnd key.
+     * @return string
+     */
+    public static function decode_wmcp_tnd($meta_json, $legacy_fallback = '')
+    {
+        $raw = trim((string) $meta_json);
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded) && isset($decoded['TND']) && trim((string) $decoded['TND']) !== '') {
+                return trim((string) $decoded['TND']);
+            }
+        }
+
+        return trim((string) $legacy_fallback);
+    }
 }
