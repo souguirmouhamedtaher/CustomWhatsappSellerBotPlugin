@@ -298,7 +298,7 @@ class CWSB_Add_Product_Actions_Service
         }
 
         try {
-            $status = CWSB_Add_Product_Support_Service::normalize_status(isset($product['status']) ? $product['status'] : 'draft');
+            $status = CWSB_Add_Product_Support_Service::normalize_status(isset($product['status']) ? $product['status'] : 'pending');
             $sku = CWSB_Utils::normalize_text(isset($product['sku']) ? $product['sku'] : '');
             $auto_generate_sku = isset($product['auto_generate_sku']) && $product['auto_generate_sku'] === true;
             $sku_prefix = CWSB_Utils::normalize_text(isset($product['sku_prefix']) ? $product['sku_prefix'] : 'GEN');
