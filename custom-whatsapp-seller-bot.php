@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom WhatsApp Seller Bot
 Description: Seller lookup endpoints for WhatsApp bot.
-Version: 1.0.1
+Version: 1.0.2
 Author: ILEYCOM-INTERNSHIPS
 */
 
@@ -15,8 +15,20 @@ define('CWSB_NS', 'whatsapp-bot/v1');
 // Absolute plugin directory path used for requiring class files.
 define('CWSB_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
+// Current plugin basename used by WordPress updates API.
+define('CWSB_PLUGIN_BASENAME', plugin_basename(__FILE__));
+
+// Public GitHub repository used as update source.
+if (!defined('CWSB_UPDATER_REPO_OWNER')) {
+    define('CWSB_UPDATER_REPO_OWNER', 'souguirmouhamedtaher');
+}
+if (!defined('CWSB_UPDATER_REPO_NAME')) {
+    define('CWSB_UPDATER_REPO_NAME', 'CustomWhatsappSellerBotPlugin');
+}
+
 // Load shared constants so cache flags and TTLs are consistently applied.
 require_once CWSB_PLUGIN_DIR . 'config/constants.php';
+require_once CWSB_PLUGIN_DIR . 'includes/utilities/class-cwsb-plugin-updater.php';
 
 /**
  * Send no-cache headers for this plugin namespace during REST responses.
@@ -158,10 +170,27 @@ function cwsb_register_rest_routes()
     CWSB_Update_Product_Controller::register_routes();
 }
 
+/**
+ * Boots GitHub-based plugin updates for in-place WordPress upgrades.
+ */
+function cwsb_bootstrap_plugin_updater()
+{
+    if (defined('WP_INSTALLING') && WP_INSTALLING) {
+        return;
+    }
+
+    CWSB_Plugin_Updater::bootstrap(
+        __FILE__,
+        CWSB_UPDATER_REPO_OWNER,
+        CWSB_UPDATER_REPO_NAME
+    );
+}
+
 // Ensure state table exists before first API call.
 register_activation_hook(__FILE__, 'cwsb_create_tables');
 add_action('plugins_loaded', 'cwsb_ensure_tables', 5);
 add_action('plugins_loaded', 'cwsb_upgrade_schema_if_needed', 6);
+add_action('plugins_loaded', 'cwsb_bootstrap_plugin_updater', 7);
 add_action('rest_api_init', 'cwsb_ensure_tables', 1);
 add_action('rest_api_init', 'cwsb_upgrade_schema_if_needed', 2);
 add_action('rest_api_init', 'cwsb_register_rest_routes', 10);

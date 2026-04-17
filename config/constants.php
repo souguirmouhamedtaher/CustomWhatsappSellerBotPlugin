@@ -48,6 +48,16 @@ if (!defined('CWSB_MAX_CAROUSEL_IMAGES')) {
     define('CWSB_MAX_CAROUSEL_IMAGES', 3);
 }
 
+/** Maximum uploaded images accepted for add-product payloads */
+if (!defined('CWSB_MAX_PRODUCT_UPLOAD_IMAGES')) {
+    define('CWSB_MAX_PRODUCT_UPLOAD_IMAGES', 10);
+}
+
+/** Maximum gallery images returned by full product detail endpoints */
+if (!defined('CWSB_MAX_PRODUCT_GALLERY_IMAGES')) {
+    define('CWSB_MAX_PRODUCT_GALLERY_IMAGES', 10);
+}
+
 // ============================================================================
 // Order Configuration
 // ============================================================================

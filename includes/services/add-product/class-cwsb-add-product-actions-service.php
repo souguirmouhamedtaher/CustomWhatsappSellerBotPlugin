@@ -466,7 +466,11 @@ class CWSB_Add_Product_Actions_Service
                 update_post_meta($product_id, '_cwsb_subcategory_label', $subcategory_label);
             }
 
-            $image_ids = CWSB_Add_Product_Support_Service::save_images_for_product($product_id, isset($product['images_base64']) ? $product['images_base64'] : []);
+            $image_ids = CWSB_Add_Product_Support_Service::save_images_for_product(
+                $product_id,
+                isset($product['images_base64']) ? $product['images_base64'] : [],
+                $seller_user_id
+            );
             if (!empty($image_ids)) {
                 set_post_thumbnail($product_id, (int) $image_ids[0]);
                 if (count($image_ids) > 1) {

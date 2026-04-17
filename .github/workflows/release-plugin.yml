@@ -1,0 +1,57 @@
+name: Release WordPress Plugin
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Build and Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare deterministic plugin package
+        shell: bash
+        run: |
+          set -euo pipefail
+          PLUGIN_DIR="${{ github.event.repository.name }}"
+          mkdir -p dist/$PLUGIN_DIR
+
+          rsync -a ./ dist/$PLUGIN_DIR/ \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='dist' \
+            --exclude='tests' \
+            --exclude='logs/*.log'
+
+          cd dist
+          zip -r "../${PLUGIN_DIR}.zip" "$PLUGIN_DIR"
+
+      - name: Ensure tag matches plugin version
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PLUGIN_VERSION=$(grep -E '^Version:' custom-whatsapp-seller-bot.php | awk '{print $2}')
+
+          if [[ -z "$PLUGIN_VERSION" ]]; then
+            echo "Could not read Version from custom-whatsapp-seller-bot.php"
+            exit 1
+          fi
+
+          if [[ "$TAG_VERSION" != "$PLUGIN_VERSION" ]]; then
+            echo "Tag version ($TAG_VERSION) does not match plugin version ($PLUGIN_VERSION)"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.event.repository.name }}.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

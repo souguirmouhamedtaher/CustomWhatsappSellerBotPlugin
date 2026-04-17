@@ -17,6 +17,61 @@ if (!class_exists('CWSB_Logger')) {
  */
 class CWSB_Add_Product_Support_Service
 {
+    private static function normalize_image_payload($image)
+    {
+        $raw = trim((string) $image);
+        if ($raw === '') {
+            return '';
+        }
+
+        return (string) preg_replace('/^data:image\/[a-zA-Z0-9.+-]+;base64,/', '', $raw);
+    }
+
+    private static function decode_image_payload($image)
+    {
+        $raw = self::normalize_image_payload($image);
+        if ($raw === '') {
+            return null;
+        }
+
+        $binary = base64_decode($raw, true);
+        if ($binary === false || $binary === '') {
+            return null;
+        }
+
+        return [
+            'raw' => $raw,
+            'binary' => $binary,
+        ];
+    }
+
+    private static function collect_uploadable_images($images, $limit = null)
+    {
+        if (!is_array($images)) {
+            return [];
+        }
+
+        $collected = [];
+        foreach ($images as $image) {
+            $decoded = self::decode_image_payload($image);
+            if ($decoded === null) {
+                continue;
+            }
+
+            $collected[] = $decoded;
+            if ($limit !== null && count($collected) >= (int) $limit) {
+                break;
+            }
+        }
+
+        return $collected;
+    }
+
+    private static function count_non_empty_images($images)
+    {
+        return count(self::collect_uploadable_images($images));
+    }
+
     public static function normalize_status($value)
     {
         $status = strtolower(CWSB_Utils::normalize_text($value));
@@ -268,9 +323,10 @@ class CWSB_Add_Product_Support_Service
         return array_values(array_unique(array_map('intval', $term_ids)));
     }
 
-    public static function save_images_for_product($product_id, $images_base64)
+    public static function save_images_for_product($product_id, $images_base64, $seller_user_id = 0)
     {
         $pid = (int) $product_id;
+        $author_id = (int) $seller_user_id;
         if ($pid <= 0 || !is_array($images_base64) || empty($images_base64)) {
             return [];
         }
@@ -280,22 +336,11 @@ class CWSB_Add_Product_Support_Service
         require_once ABSPATH . 'wp-admin/includes/media.php';
 
         $saved_ids = [];
-        $max_images = min(6, count($images_base64));
+        $uploadable_images = self::collect_uploadable_images($images_base64, (int) CWSB_MAX_PRODUCT_UPLOAD_IMAGES);
 
-        for ($i = 0; $i < $max_images; $i++) {
-            $raw = isset($images_base64[$i]) ? (string) $images_base64[$i] : '';
-            if (trim($raw) === '') {
-                continue;
-            }
-
-            $raw = preg_replace('/^data:image\/[a-zA-Z0-9.+-]+;base64,/', '', $raw);
-            $bin = base64_decode($raw, true);
-            if ($bin === false || $bin === '') {
-                continue;
-            }
-
-            $filename = 'cwsb-product-' . $pid . '-' . ($i + 1) . '-' . time() . '.jpg';
-            $upload = wp_upload_bits($filename, null, $bin);
+        foreach ($uploadable_images as $index => $image) {
+            $filename = 'cwsb-product-' . $pid . '-' . ($index + 1) . '-' . time() . '.jpg';
+            $upload = wp_upload_bits($filename, null, $image['binary']);
             if (!empty($upload['error'])) {
                 continue;
             }
@@ -305,6 +350,8 @@ class CWSB_Add_Product_Support_Service
                 'post_title' => sanitize_text_field(pathinfo($filename, PATHINFO_FILENAME)),
                 'post_content' => '',
                 'post_status' => 'inherit',
+                // Keep media ownership aligned with the seller account for vendor dashboards.
+                'post_author' => $author_id > 0 ? $author_id : 0,
             ];
 
             $attach_id = wp_insert_attachment($attachment, $upload['file'], $pid);
@@ -363,6 +410,23 @@ class CWSB_Add_Product_Support_Service
                 'field' => 'product.category_id',
                 'code' => 'required',
                 'message' => 'Product category is required.',
+            ];
+        }
+
+        if (isset($p['images_base64']) && !is_array($p['images_base64'])) {
+            $errors[] = [
+                'field' => 'product.images_base64',
+                'code' => 'invalid_type',
+                'message' => 'Product images must be provided as an array.',
+            ];
+        }
+
+        $image_count = self::count_non_empty_images(isset($p['images_base64']) ? $p['images_base64'] : []);
+        if ($image_count > (int) CWSB_MAX_PRODUCT_UPLOAD_IMAGES) {
+            $errors[] = [
+                'field' => 'product.images_base64',
+                'code' => 'max_items_exceeded',
+                'message' => sprintf('A maximum of %d product images is allowed.', (int) CWSB_MAX_PRODUCT_UPLOAD_IMAGES),
             ];
         }
 
