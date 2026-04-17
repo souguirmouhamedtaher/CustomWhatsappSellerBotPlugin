@@ -17,6 +17,32 @@ if (!class_exists('CWSB_Logger')) {
  */
 class CWSB_Add_Product_Support_Service
 {
+    private static function round_with_threshold_to_int($value, $threshold = 0.2)
+    {
+        $num = (float) $value;
+        if ($num <= 0) {
+            return 0;
+        }
+
+        $safe_threshold = (float) $threshold;
+        if ($safe_threshold < 0) {
+            $safe_threshold = 0;
+        }
+        if ($safe_threshold > 1) {
+            $safe_threshold = 1;
+        }
+
+        $base = (int) floor($num);
+        $fraction = $num - $base;
+        $epsilon = 0.000000001;
+
+        if (($fraction + $epsilon) >= $safe_threshold) {
+            return $base + 1;
+        }
+
+        return $base;
+    }
+
     private static function normalize_image_payload($image)
     {
         $raw = trim((string) $image);
@@ -114,13 +140,15 @@ class CWSB_Add_Product_Support_Service
 
         $rounding_decimals = max(0, min($rounding_decimals, 4));
         $eur = ($safe_tnd / $exchange_rate) + $fixed_markup;
-        $result = round($eur, $rounding_decimals);
+        $result = self::round_with_threshold_to_int($eur, 0.2);
 
         CWSB_Logger::debug('convert_tnd_to_eur', [
             'tnd'        => $safe_tnd,
             'rate'       => $exchange_rate,
             'markup'     => $fixed_markup,
             'decimals'   => $rounding_decimals,
+            'rounding_mode' => 'threshold_integer',
+            'rounding_threshold' => 0.2,
             'eur'        => $result,
         ]);
 
@@ -172,15 +200,13 @@ class CWSB_Add_Product_Support_Service
                 return null;
             }
 
-            $eur_decimals = isset($currencies['EUR']['decimals']) ? absint($currencies['EUR']['decimals']) : 2;
-            $eur_decimals = max(0, min($eur_decimals, 4));
             $fixed_markup = isset($config['fixed_markup_eur']) ? (float) $config['fixed_markup_eur'] : 9;
 
             $regular_eur = $regular_tnd > 0
-                ? round(($regular_tnd * $eur_per_tnd) + $fixed_markup, $eur_decimals)
+                ? self::round_with_threshold_to_int(($regular_tnd * $eur_per_tnd) + $fixed_markup, 0.2)
                 : 0;
             $promo_eur = $promo_tnd > 0
-                ? round(($promo_tnd * $eur_per_tnd) + $fixed_markup, $eur_decimals)
+                ? self::round_with_threshold_to_int(($promo_tnd * $eur_per_tnd) + $fixed_markup, 0.2)
                 : 0;
 
             return [

@@ -102,6 +102,32 @@ function assert_count($expected_count, $actual, $label = '')
     return false;
 }
 
+function round_threshold_to_int_expected($value, $threshold = 0.2)
+{
+    $num = (float) $value;
+    if ($num <= 0) {
+        return 0;
+    }
+
+    $safe_threshold = (float) $threshold;
+    if ($safe_threshold < 0) {
+        $safe_threshold = 0;
+    }
+    if ($safe_threshold > 1) {
+        $safe_threshold = 1;
+    }
+
+    $base = (int) floor($num);
+    $fraction = $num - $base;
+    $epsilon = 0.000000001;
+
+    if (($fraction + $epsilon) >= $safe_threshold) {
+        return $base + 1;
+    }
+
+    return $base;
+}
+
 function run_test($name, callable $fn)
 {
     global $results, $total_assertions, $current_failures, $current_assertions;
@@ -225,31 +251,27 @@ run_test('to_dimension_string: zero/negative returns empty', function () {
 
 // --- convert_tnd_to_eur (math core) -----------------------------------------
 
-run_test('convert_tnd_to_eur: formula = (tnd / rate) + markup, rounded', function () {
+run_test('convert_tnd_to_eur: formula = (tnd / rate) + markup, threshold integer', function () {
     $config = ['exchange_rate' => 3.358, 'fixed_markup_eur' => 9.0, 'rounding_decimals' => 2];
 
-    // 100 TND: (100/3.358) + 9 = 29.779... + 9 = 38.78 (rounded 2dp)
-    $expected = round((100 / 3.358) + 9, 2);
+    $expected = round_threshold_to_int_expected((100 / 3.358) + 9, 0.2);
     assert_nearly_equals($expected, CWSB_Add_Product_Support_Service::convert_tnd_to_eur(100, $config), '100 TND');
 
-    // 50 TND
-    $expected50 = round((50 / 3.358) + 9, 2);
+    $expected50 = round_threshold_to_int_expected((50 / 3.358) + 9, 0.2);
     assert_nearly_equals($expected50, CWSB_Add_Product_Support_Service::convert_tnd_to_eur(50, $config), '50 TND');
 
-    // 0 markup
     $config_no_markup = ['exchange_rate' => 3.358, 'fixed_markup_eur' => 0, 'rounding_decimals' => 4];
-    $expected_no_markup = round(100 / 3.358, 4);
+    $expected_no_markup = round_threshold_to_int_expected(100 / 3.358, 0.2);
     assert_nearly_equals(
         $expected_no_markup,
         CWSB_Add_Product_Support_Service::convert_tnd_to_eur(100, $config_no_markup),
-        'no markup 4dp',
+        'no markup',
         0.0001
     );
 });
 
 run_test('convert_tnd_to_eur: defaults when config omitted', function () {
-    // Uses default rate=3.358, markup=9, decimals=2
-    $expected = round((100 / 3.358) + 9, 2);
+    $expected = round_threshold_to_int_expected((100 / 3.358) + 9, 0.2);
     assert_nearly_equals($expected, CWSB_Add_Product_Support_Service::convert_tnd_to_eur(100), 'default config');
 });
 
@@ -262,17 +284,24 @@ run_test('convert_tnd_to_eur: zero/negative input returns 0', function () {
 
 run_test('convert_tnd_to_eur: invalid rate falls back to 3.358', function () {
     $config_zero_rate = ['exchange_rate' => 0, 'fixed_markup_eur' => 9, 'rounding_decimals' => 2];
-    $expected = round((100 / 3.358) + 9, 2);
+    $expected = round_threshold_to_int_expected((100 / 3.358) + 9, 0.2);
     assert_nearly_equals($expected, CWSB_Add_Product_Support_Service::convert_tnd_to_eur(100, $config_zero_rate), 'rate=0 falls back');
 });
 
-run_test('convert_tnd_to_eur: rounding_decimals clamped to [0,4]', function () {
-    $config = ['exchange_rate' => 3.358, 'fixed_markup_eur' => 0, 'rounding_decimals' => 10];
-    $result = CWSB_Add_Product_Support_Service::convert_tnd_to_eur(100, $config);
-    // Clamped to 4dp â€” result should have at most 4 decimal places
-    $parts = explode('.', (string) $result);
-    $decimals_count = isset($parts[1]) ? strlen($parts[1]) : 0;
-    assert_equals(true, $decimals_count <= 4, 'max 4dp after clamp');
+run_test('convert_tnd_to_eur: threshold boundary behavior at 0.2', function () {
+    $config = ['exchange_rate' => 1, 'fixed_markup_eur' => 0, 'rounding_decimals' => 2];
+
+    assert_equals(14, CWSB_Add_Product_Support_Service::convert_tnd_to_eur(14.0646, $config), '< 14.2');
+    assert_equals(15, CWSB_Add_Product_Support_Service::convert_tnd_to_eur(14.21321, $config), '>= 14.2');
+    assert_equals(15, CWSB_Add_Product_Support_Service::convert_tnd_to_eur(14.564, $config), '>= 14.2 high frac');
+});
+
+run_test('convert_tnd_to_eur: rounding_decimals does not change integer result', function () {
+    $base = ['exchange_rate' => 3.358, 'fixed_markup_eur' => 9];
+    $a = CWSB_Add_Product_Support_Service::convert_tnd_to_eur(100, array_merge($base, ['rounding_decimals' => 0]));
+    $b = CWSB_Add_Product_Support_Service::convert_tnd_to_eur(100, array_merge($base, ['rounding_decimals' => 4]));
+
+    assert_equals($a, $b, 'decimals ignored for threshold integer rounding');
 });
 
 // --- validate_create_payload ------------------------------------------------

@@ -201,6 +201,8 @@ class CWSB_Add_Product_Actions_Service
                 'promo_eur' => $live['promo_eur'],
                 'config' => array_merge($config, [
                     'provider' => 'woocommerce-multi-currency',
+                    'rounding_mode' => 'threshold_integer',
+                    'rounding_threshold' => 0.2,
                     'live_rate' => isset($live['rate']) ? (float) $live['rate'] : 0,
                     'target_currency' => 'EUR',
                 ]),
@@ -215,6 +217,8 @@ class CWSB_Add_Product_Actions_Service
             'promo_eur' => $promo_eur,
             'config' => array_merge($config, [
                 'provider' => 'local-fallback',
+                'rounding_mode' => 'threshold_integer',
+                'rounding_threshold' => 0.2,
             ]),
         ]);
     }
