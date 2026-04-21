@@ -229,6 +229,26 @@ class CWSB_Update_Product_Writer
             }
         }
 
+        $description_update = ['ID' => $product_id];
+        $has_description_update = false;
+
+        if (array_key_exists('short_description', $data)) {
+            $description_update['post_excerpt'] = sanitize_textarea_field((string) $data['short_description']);
+            $has_description_update = true;
+        }
+
+        if (array_key_exists('full_description', $data)) {
+            $description_update['post_content'] = wp_kses_post((string) $data['full_description']);
+            $has_description_update = true;
+        } elseif (array_key_exists('description', $data)) {
+            $description_update['post_content'] = wp_kses_post((string) $data['description']);
+            $has_description_update = true;
+        }
+
+        if ($has_description_update) {
+            wp_update_post($description_update);
+        }
+
         if ($should_force_draft) {
             wp_update_post([
                 'ID' => $product_id,

@@ -260,7 +260,24 @@ class CWSB_Utils
             return '33' . substr($digits, 1);
         }
 
-        // Reject unsupported countries (for example Senegal) instead of guessing.
+        // Senegal examples:
+        // - +221771234567  -> 221771234567
+        // - 221771234567   -> 221771234567
+        // - 00221771234567 -> 221771234567
+        // - 771234567      -> 221771234567
+        if (strpos($digits, '00221') === 0 && strlen($digits) === 14) {
+            return substr($digits, 2);
+        }
+
+        if (strpos($digits, '221') === 0 && strlen($digits) === 12) {
+            return $digits;
+        }
+
+        if (strlen($digits) === 9) {
+            return '221' . $digits;
+        }
+
+        // Reject unsupported countries instead of guessing.
         return '';
     }
 
@@ -301,6 +318,9 @@ class CWSB_Utils
         } elseif (strlen($canonical) === 11 && strpos($canonical, '33') === 0) {
             $local = '0' . substr($canonical, 2);
             $suffix = substr($canonical, 2);
+        } elseif (strlen($canonical) === 12 && strpos($canonical, '221') === 0) {
+            $local = substr($canonical, -9);
+            $suffix = $local;
         } else {
             $local = $canonical;
             $suffix = $canonical;

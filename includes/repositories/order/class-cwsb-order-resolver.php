@@ -52,19 +52,22 @@ class CWSB_Order_Resolver
         // Strategy 2: Phone-based lookup from state table
         if ($phone !== '') {
             $refs = CWSB_Utils::phone_comparison_refs($phone);
-            $local8 = $refs['local8'];
-            $legacy216 = $refs['legacy216'];
+            $local = $refs['local'];
+            $legacy = $refs['legacy'];
+            $suffix = $refs['suffix'];
+            $suffix_length = $refs['suffix_length'];
 
             $by_phone_user_id = (int) $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT user_id FROM {$state_table}
                      WHERE phone IN (%s, %s)
-                        OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), 8) = %s
+                        OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), %d) = %s
                      ORDER BY id DESC
                      LIMIT 1",
-                    $local8,
-                    $legacy216,
-                    $local8
+                    $local,
+                    $legacy,
+                    $suffix_length,
+                    $suffix
                 )
             );
 

@@ -19,6 +19,17 @@ define('ABSPATH', __DIR__ . '/../../');
 define('WP_DEBUG', true);
 define('SUITE_START', microtime(true));
 
+// Constants normally loaded from plugin bootstrap; required for standalone tests.
+if (!defined('CWSB_MAX_PRODUCT_UPLOAD_IMAGES')) {
+    define('CWSB_MAX_PRODUCT_UPLOAD_IMAGES', 10);
+}
+if (!defined('CWSB_MAX_PRODUCT_GALLERY_IMAGES')) {
+    define('CWSB_MAX_PRODUCT_GALLERY_IMAGES', 10);
+}
+if (!defined('CWSB_MAX_CAROUSEL_IMAGES')) {
+    define('CWSB_MAX_CAROUSEL_IMAGES', 3);
+}
+
 if (!function_exists('number_format')) {
     // number_format is a native PHP function â€” always available.
 }
@@ -414,6 +425,13 @@ run_test('normalize_phone: France number formats', function () {
     assert_equals('33782655322', CWSB_Utils::normalize_phone('0782655322'),        '0xxx France');
 });
 
+run_test('normalize_phone: Senegal number formats', function () {
+    assert_equals('221771234567', CWSB_Utils::normalize_phone('771234567'),         '9-digit local');
+    assert_equals('221771234567', CWSB_Utils::normalize_phone('+221771234567'),     '+221');
+    assert_equals('221771234567', CWSB_Utils::normalize_phone('221771234567'),      '221 prefix');
+    assert_equals('221771234567', CWSB_Utils::normalize_phone('00221771234567'),    '00221');
+});
+
 run_test('normalize_phone: unsupported formats return empty', function () {
     assert_equals('', CWSB_Utils::normalize_phone('123'), 'too short');
     assert_equals('', CWSB_Utils::normalize_phone(''),    'empty');
@@ -423,6 +441,8 @@ run_test('normalize_phone: unsupported formats return empty', function () {
 run_test('extract_phone_from_flow_token: valid token', function () {
     assert_equals('21650354773', CWSB_Utils::extract_phone_from_flow_token('flowtoken-50354773-1234567890'), '8-digit in token');
     assert_equals('21650354773', CWSB_Utils::extract_phone_from_flow_token('flowtoken-21650354773-9999'),   '11-digit in token');
+    assert_equals('221771234567', CWSB_Utils::extract_phone_from_flow_token('flowtoken-771234567-1234567890'), 'SN local in token');
+    assert_equals('221771234567', CWSB_Utils::extract_phone_from_flow_token('flowtoken-221771234567-9999'),   'SN canonical in token');
 });
 
 run_test('extract_phone_from_flow_token: invalid token returns empty', function () {

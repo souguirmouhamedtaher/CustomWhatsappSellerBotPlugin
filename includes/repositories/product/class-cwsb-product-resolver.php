@@ -42,19 +42,22 @@ class CWSB_Product_Resolver
             return 0;
         }
 
-        $local8 = $refs['local8'];
-        $legacy216 = $refs['legacy216'];
+        $local = $refs['local'];
+        $legacy = $refs['legacy'];
+        $suffix = $refs['suffix'];
+        $suffix_length = $refs['suffix_length'];
 
         $table = CWSB_Seller_Repository::state_table_name();
         return (int) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT user_id FROM {$table}
                  WHERE phone IN (%s, %s)
-                    OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), 8) = %s
+                    OR RIGHT(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), %d) = %s
                  LIMIT 1",
-                $local8,
-                $legacy216,
-                $local8
+                $local,
+                $legacy,
+                $suffix_length,
+                $suffix
             )
         );
     }
