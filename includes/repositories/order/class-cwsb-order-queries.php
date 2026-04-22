@@ -141,6 +141,45 @@ class CWSB_Order_Queries
     }
 
     /**
+     * Get raw post statuses keyed by order ID.
+     *
+     * Returns: [order_id => post_status]
+     */
+    public static function find_order_status_map_by_order_ids($order_ids)
+    {
+        global $wpdb;
+
+        $ids = self::sanitize_int_ids($order_ids);
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = self::build_placeholders(count($ids), '%d');
+        $sql = "
+            SELECT ID, post_status
+            FROM {$wpdb->posts}
+            WHERE ID IN ({$placeholders})
+        ";
+
+        $rows = $wpdb->get_results($wpdb->prepare($sql, ...$ids), ARRAY_A);
+        if (!is_array($rows) || empty($rows)) {
+            return [];
+        }
+
+        $map = [];
+        foreach ($rows as $row) {
+            $oid = isset($row['ID']) ? (int) $row['ID'] : 0;
+            if ($oid <= 0) {
+                continue;
+            }
+
+            $map[$oid] = isset($row['post_status']) ? (string) $row['post_status'] : '';
+        }
+
+        return $map;
+    }
+
+    /**
      * Fetch complete order row by ID.
      *
      * Includes all order metadata (billing, shipping, payment, etc).
@@ -196,6 +235,71 @@ class CWSB_Order_Queries
 
         $row = $wpdb->get_row($wpdb->prepare($sql, $oid), ARRAY_A);
         return is_array($row) ? $row : null;
+    }
+
+    /**
+     * Check whether an order contains at least one product owned by seller.
+     */
+    public static function seller_owns_order($seller_user_id, $order_id)
+    {
+        global $wpdb;
+
+        $seller_user_id = (int) $seller_user_id;
+        $order_id = (int) $order_id;
+
+        if ($seller_user_id <= 0 || $order_id <= 0) {
+            return false;
+        }
+
+        $lookup_table = $wpdb->prefix . 'wc_order_product_lookup';
+        if (self::table_exists($lookup_table)) {
+            $sql = "
+                SELECT 1
+                FROM {$lookup_table} opl
+                INNER JOIN {$wpdb->posts} products
+                    ON products.ID = opl.product_id
+                INNER JOIN {$wpdb->posts} orders
+                    ON orders.ID = opl.order_id
+                WHERE opl.order_id = %d
+                  AND products.post_type = 'product'
+                  AND products.post_author = %d
+                  AND orders.post_type = 'shop_order'
+                  AND orders.post_status NOT IN ('trash', 'auto-draft')
+                LIMIT 1
+            ";
+
+            $found = (int) $wpdb->get_var($wpdb->prepare($sql, $order_id, $seller_user_id));
+            if ($found === 1) {
+                return true;
+            }
+        }
+
+        // Fallback for stores without wc_order_product_lookup.
+        $order_items_table = $wpdb->prefix . 'woocommerce_order_items';
+        $order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
+
+        $sql = "
+            SELECT 1
+            FROM {$order_items_table} oi
+            INNER JOIN {$order_itemmeta_table} oim
+                ON oim.order_item_id = oi.order_item_id
+               AND oim.meta_key = '_product_id'
+            INNER JOIN {$wpdb->posts} products
+                ON products.ID = CAST(oim.meta_value AS UNSIGNED)
+            INNER JOIN {$wpdb->posts} orders
+                ON orders.ID = oi.order_id
+            WHERE oi.order_id = %d
+              AND oi.order_item_type = 'line_item'
+              AND products.post_type = 'product'
+              AND products.post_author = %d
+              AND orders.post_type = 'shop_order'
+              AND orders.post_status NOT IN ('trash', 'auto-draft')
+            LIMIT 1
+        ";
+
+        $found = (int) $wpdb->get_var($wpdb->prepare($sql, $order_id, $seller_user_id));
+
+        return $found === 1;
     }
 
     /**

@@ -197,15 +197,17 @@ class CWSB_Order_Repository
             ];
         }
 
+        $status_map = CWSB_Order_Queries::find_order_status_map_by_order_ids($candidate_ids);
         $matched_ids = [];
         foreach ($candidate_ids as $order_id) {
-            $raw_status = get_post_status((int) $order_id);
+            $oid = (int) $order_id;
+            $raw_status = isset($status_map[$oid]) ? (string) $status_map[$oid] : '';
             $mapped_status = CWSB_Order_Mapper::map_order_status($raw_status);
             if (!CWSB_Order_Mapper::status_matches_filter($mapped_status, $normalized_filter)) {
                 continue;
             }
 
-            $matched_ids[] = (int) $order_id;
+            $matched_ids[] = $oid;
             if (count($matched_ids) >= ($offset + $safe_limit + 1)) {
                 break;
             }
@@ -263,6 +265,30 @@ class CWSB_Order_Repository
     }
 
     /**
+     * Find single order by ID, scoped to seller flow token ownership.
+     */
+    public static function find_order_by_id_for_seller_flow_token($flow_token, $order_id)
+    {
+        $token = CWSB_Utils::normalize_text($flow_token);
+        $oid = (int) $order_id;
+
+        if ($token === '' || $oid <= 0) {
+            return null;
+        }
+
+        $seller_user_id = CWSB_Order_Resolver::resolve_seller_user_id_by_flow_token($token);
+        if ($seller_user_id <= 0) {
+            return null;
+        }
+
+        if (!CWSB_Order_Queries::seller_owns_order($seller_user_id, $oid)) {
+            return null;
+        }
+
+        return self::find_order_by_id($oid);
+    }
+
+    /**
      * Find order articles by order ID.
      */
     public static function find_order_articles_by_order_id($order_id)
@@ -273,5 +299,29 @@ class CWSB_Order_Repository
         }
 
         return CWSB_Order_Mapper::map_order_articles($row);
+    }
+
+    /**
+     * Find order articles by order ID, scoped to seller flow token ownership.
+     */
+    public static function find_order_articles_by_order_id_for_seller_flow_token($flow_token, $order_id)
+    {
+        $token = CWSB_Utils::normalize_text($flow_token);
+        $oid = (int) $order_id;
+
+        if ($token === '' || $oid <= 0) {
+            return [];
+        }
+
+        $seller_user_id = CWSB_Order_Resolver::resolve_seller_user_id_by_flow_token($token);
+        if ($seller_user_id <= 0) {
+            return [];
+        }
+
+        if (!CWSB_Order_Queries::seller_owns_order($seller_user_id, $oid)) {
+            return [];
+        }
+
+        return self::find_order_articles_by_order_id($oid);
     }
 }

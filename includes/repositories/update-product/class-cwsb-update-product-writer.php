@@ -46,8 +46,6 @@ class CWSB_Update_Product_Writer
             return false;
         }
 
-        $should_force_draft = self::contains_non_price_or_stock_changes($data);
-
         if (!empty($data['name'])) {
             $clean_name = CWSB_Utils::normalize_text($data['name']);
             if ($clean_name !== '') {
@@ -249,10 +247,10 @@ class CWSB_Update_Product_Writer
             wp_update_post($description_update);
         }
 
-        if ($should_force_draft) {
+        if ((string) $owner_row['post_status'] === 'draft') {
             wp_update_post([
                 'ID' => $product_id,
-                'post_status' => 'draft',
+                'post_status' => 'pending',
             ]);
         }
 
@@ -316,35 +314,6 @@ class CWSB_Update_Product_Writer
         ]);
 
         return is_string($payload) ? $payload : '{"TND":"' . $normalized . '"}';
-    }
-
-    /**
-     * Returns true when payload contains at least one change outside price/stock fields.
-     * Business rule: non price/quantity updates must move product back to draft.
-     */
-    private static function contains_non_price_or_stock_changes($data)
-    {
-        if (!is_array($data) || empty($data)) {
-            return false;
-        }
-
-        $price_or_stock_keys = [
-            'regular_eur',
-            'sale_eur',
-            'regular_tnd',
-            'sale_tnd',
-            'stock',
-        ];
-
-        foreach ($data as $key => $value) {
-            if (in_array((string) $key, $price_or_stock_keys, true)) {
-                continue;
-            }
-
-            return true;
-        }
-
-        return false;
     }
 
     /**

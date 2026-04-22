@@ -95,18 +95,24 @@ class CWSB_Auth_Order_Endpoints_Service
 
     public static function get_seller_order_by_id(WP_REST_Request $request)
     {
+        $flow_token = (string) $request->get_param('flow_token');
         $order_id = (string) $request->get_param('order_id');
+
+        if (trim($flow_token) === '') {
+            return CWSB_Response::error('invalid_request', 'flow_token is required.', 422);
+        }
 
         if (trim($order_id) === '') {
             return CWSB_Response::error('invalid_request', 'order_id is required.', 422);
         }
 
-        $order = CWSB_Order_Repository::find_order_by_id($order_id);
+        $order = CWSB_Order_Repository::find_order_by_id_for_seller_flow_token($flow_token, $order_id);
         return CWSB_Response::ok(['order' => $order ?: null]);
     }
 
     public static function get_seller_order_articles_by_id(WP_REST_Request $request)
     {
+        $flow_token = (string) $request->get_param('flow_token');
         $order_id = (string) $request->get_param('order_id');
         $page = max(1, (int) $request->get_param('page'));
         $limit = (int) $request->get_param('limit');
@@ -115,11 +121,15 @@ class CWSB_Auth_Order_Endpoints_Service
         }
         $limit = min($limit, 3);
 
+        if (trim($flow_token) === '') {
+            return CWSB_Response::error('invalid_request', 'flow_token is required.', 422);
+        }
+
         if (trim($order_id) === '') {
             return CWSB_Response::error('invalid_request', 'order_id is required.', 422);
         }
 
-        $articles = CWSB_Order_Repository::find_order_articles_by_order_id($order_id);
+        $articles = CWSB_Order_Repository::find_order_articles_by_order_id_for_seller_flow_token($flow_token, $order_id);
         $total = is_array($articles) ? count($articles) : 0;
         $offset = ($page - 1) * $limit;
         $paged_articles = is_array($articles) ? array_slice($articles, $offset, $limit) : [];

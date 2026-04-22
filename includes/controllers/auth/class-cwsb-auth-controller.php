@@ -175,7 +175,10 @@ class CWSB_Auth_Controller
             'methods' => 'POST',
             'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_order_by_id'],
             'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args' => ['order_id' => ['required' => true]],
+            'args' => [
+                'flow_token' => ['required' => true],
+                'order_id' => ['required' => true],
+            ],
         ]);
 
         register_rest_route(CWSB_NS, '/seller/order/articles/by-id', [
@@ -183,6 +186,7 @@ class CWSB_Auth_Controller
             'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_order_articles_by_id'],
             'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
             'args' => [
+                'flow_token' => ['required' => true],
                 'order_id' => ['required' => true],
                 'page' => ['required' => false],
                 'limit' => ['required' => false],
