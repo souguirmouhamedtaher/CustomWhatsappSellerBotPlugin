@@ -181,11 +181,17 @@ class CWSB_Order_Repository
             ];
         }
 
-        $needed = $offset + $safe_limit + 1;
-        $scan_limit = max(self::DEFAULT_ORDERS_LIMIT, min(400, $needed * 3));
-        $candidate_ids = CWSB_Order_Queries::find_order_ids_for_seller($seller_user_id, $scan_limit);
+        // Fetch (limit + 1) rows to probe for more pages independently
+        // Status filtering happens in SQL WHERE clause, not in PHP
+        $probe_limit = $safe_limit + 1;
+        $order_ids = CWSB_Order_Queries::find_order_ids_for_seller_by_status(
+            $seller_user_id,
+            $normalized_filter,
+            $probe_limit,
+            $offset
+        );
 
-        if (empty($candidate_ids)) {
+        if (empty($order_ids)) {
             return [
                 'count' => 0,
                 'page' => $safe_page,
@@ -197,32 +203,21 @@ class CWSB_Order_Repository
             ];
         }
 
-        $status_map = CWSB_Order_Queries::find_order_status_map_by_order_ids($candidate_ids);
-        $matched_ids = [];
-        foreach ($candidate_ids as $order_id) {
-            $oid = (int) $order_id;
-            $raw_status = isset($status_map[$oid]) ? (string) $status_map[$oid] : '';
-            $mapped_status = CWSB_Order_Mapper::map_order_status($raw_status);
-            if (!CWSB_Order_Mapper::status_matches_filter($mapped_status, $normalized_filter)) {
-                continue;
-            }
+        // Determine has_more independently: if we got more rows than requested limit
+        $has_more = count($order_ids) > $safe_limit;
 
-            $matched_ids[] = $oid;
-            if (count($matched_ids) >= ($offset + $safe_limit + 1)) {
-                break;
-            }
-        }
+        // Trim to the requested limit (discard probe row if present)
+        $page_order_ids = array_slice($order_ids, 0, $safe_limit);
 
-        $slice_ids = array_slice($matched_ids, $offset, $safe_limit);
+        // Fetch and map order details
         $orders = [];
-        foreach ($slice_ids as $order_id) {
+        foreach ($page_order_ids as $order_id) {
             $row = CWSB_Order_Queries::find_order_row_by_id($order_id);
             if (is_array($row)) {
                 $orders[] = CWSB_Order_Mapper::map_order_summary($row);
             }
         }
 
-        $has_more = count($matched_ids) > ($offset + count($orders));
         $next_page = $has_more ? ($safe_page + 1) : null;
 
         error_log(

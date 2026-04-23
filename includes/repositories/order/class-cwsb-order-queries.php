@@ -68,6 +68,89 @@ class CWSB_Order_Queries
     }
 
     /**
+     * Find order IDs for seller filtered by status with pagination.
+     *
+     * Returns up to (limit + 1) rows to enable has_more detection.
+     * Status filtering happens in SQL WHERE clause, not in PHP.
+     * Uses WCFM marketplace order mapping by vendor_id.
+     */
+    public static function find_order_ids_for_seller_by_status($seller_user_id, $status_filter = 'all', $limit = null, $offset = 0)
+    {
+        global $wpdb;
+
+        $seller_user_id = (int) $seller_user_id;
+        $safe_limit = null;
+        if ($limit !== null) {
+            $safe_limit = max(1, (int) $limit);
+        }
+        $safe_offset = max(0, (int) $offset);
+
+        if ($seller_user_id <= 0) {
+            return [];
+        }
+
+        $marketplace_orders_table = $wpdb->prefix . 'wcfm_marketplace_orders';
+        if (!self::table_exists($marketplace_orders_table)) {
+            return [];
+        }
+
+        $status_clauses = self::build_status_where_clause($status_filter);
+        if ($status_clauses === '') {
+            $status_clauses = 'AND ( 1=1 )'; // Match all statuses
+        }
+
+        $sql = "
+            SELECT DISTINCT o.ID
+            FROM {$marketplace_orders_table} mo
+            INNER JOIN {$wpdb->posts} o
+                ON o.ID = mo.order_id
+            WHERE mo.vendor_id = %d
+              AND o.post_type = 'shop_order'
+              AND o.post_status NOT IN ('trash', 'auto-draft')
+              {$status_clauses}
+            ORDER BY o.post_date_gmt DESC, o.ID DESC
+        ";
+
+        $params = [(int) $seller_user_id];
+
+        if ($safe_limit !== null) {
+            $sql .= "\n            LIMIT %d OFFSET %d\n";
+            $params[] = $safe_limit;
+            $params[] = $safe_offset;
+        }
+
+        $rows = $wpdb->get_col($wpdb->prepare($sql, ...$params));
+        $ids = self::sanitize_int_ids($rows);
+
+        return $ids;
+    }
+
+    /**
+     * Build SQL WHERE clause for status filter.
+     *
+     * Converts semantic status filter to WordPress post_status values.
+     * Returns empty string for 'all' (no additional WHERE clause needed).
+     */
+    public static function build_status_where_clause($status_filter)
+    {
+        $filter = strtolower(trim((string) $status_filter));
+
+        if ($filter === 'completed') {
+            return "AND o.post_status IN ('wc-completed')";
+        }
+
+        if ($filter === 'in_delivery' || $filter === 'in-delivery') {
+            return "AND o.post_status IN ('wc-shipped', 'wc-in-delivery')";
+        }
+
+        if ($filter === 'to_deliver') {
+            return "AND o.post_status NOT IN ('wc-completed', 'wc-shipped', 'wc-in-delivery')";
+        }
+
+        return ''; // 'all' or unknown filter
+    }
+
+    /**
      * Get order status aggregation for list of order IDs.
      *
      * Returns: [{ post_status, order_count }, ...]
