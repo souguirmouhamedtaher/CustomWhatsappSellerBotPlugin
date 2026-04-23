@@ -293,12 +293,16 @@ class CWSB_Order_Repository
      */
     public static function find_order_articles_by_order_id($order_id)
     {
-        $row = CWSB_Order_Queries::find_order_row_by_id($order_id);
+        $oid = (int) $order_id;
+        $row = CWSB_Order_Queries::find_order_row_by_id($oid);
         if (!is_array($row)) {
             return [];
         }
 
-        return CWSB_Order_Mapper::map_order_articles($row);
+        $currency = CWSB_Utils::normalize_text(isset($row['order_currency']) ? $row['order_currency'] : '');
+        $item_rows = CWSB_Order_Queries::find_order_article_rows_by_order_id($oid);
+
+        return CWSB_Order_Mapper::map_order_articles_from_rows($item_rows, $currency);
     }
 
     /**
@@ -323,5 +327,72 @@ class CWSB_Order_Repository
         }
 
         return self::find_order_articles_by_order_id($oid);
+    }
+
+    /**
+     * Find paginated order articles by order ID, scoped to seller flow token ownership.
+     */
+    public static function find_order_articles_page_by_order_id_for_seller_flow_token($flow_token, $order_id, $page, $limit)
+    {
+        $token = CWSB_Utils::normalize_text($flow_token);
+        $oid = (int) $order_id;
+        $safe_page = max(1, (int) $page);
+        $safe_limit = max(1, min((int) $limit, 3));
+
+        if ($token === '' || $oid <= 0) {
+            return [
+                'count' => 0,
+                'total' => 0,
+                'page' => $safe_page,
+                'limit' => $safe_limit,
+                'has_more' => false,
+                'next_page' => null,
+                'articles' => [],
+            ];
+        }
+
+        $seller_user_id = CWSB_Order_Resolver::resolve_seller_user_id_by_flow_token($token);
+        if ($seller_user_id <= 0 || !CWSB_Order_Queries::seller_owns_order($seller_user_id, $oid)) {
+            return [
+                'count' => 0,
+                'total' => 0,
+                'page' => $safe_page,
+                'limit' => $safe_limit,
+                'has_more' => false,
+                'next_page' => null,
+                'articles' => [],
+            ];
+        }
+
+        $row = CWSB_Order_Queries::find_order_row_by_id($oid);
+        if (!is_array($row)) {
+            return [
+                'count' => 0,
+                'total' => 0,
+                'page' => $safe_page,
+                'limit' => $safe_limit,
+                'has_more' => false,
+                'next_page' => null,
+                'articles' => [],
+            ];
+        }
+
+        $total = CWSB_Order_Queries::count_order_articles_by_order_id($oid);
+        $offset = ($safe_page - 1) * $safe_limit;
+        $item_rows = CWSB_Order_Queries::find_order_article_rows_by_order_id($oid, $safe_limit, $offset);
+        $currency = CWSB_Utils::normalize_text(isset($row['order_currency']) ? $row['order_currency'] : '');
+        $articles = CWSB_Order_Mapper::map_order_articles_from_rows($item_rows, $currency);
+
+        $has_more = ($offset + count($articles)) < $total;
+
+        return [
+            'count' => count($articles),
+            'total' => (int) $total,
+            'page' => (int) $safe_page,
+            'limit' => (int) $safe_limit,
+            'has_more' => (bool) $has_more,
+            'next_page' => $has_more ? (int) ($safe_page + 1) : null,
+            'articles' => $articles,
+        ];
     }
 }

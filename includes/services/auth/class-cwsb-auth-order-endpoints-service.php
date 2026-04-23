@@ -129,20 +129,21 @@ class CWSB_Auth_Order_Endpoints_Service
             return CWSB_Response::error('invalid_request', 'order_id is required.', 422);
         }
 
-        $articles = CWSB_Order_Repository::find_order_articles_by_order_id_for_seller_flow_token($flow_token, $order_id);
-        $total = is_array($articles) ? count($articles) : 0;
-        $offset = ($page - 1) * $limit;
-        $paged_articles = is_array($articles) ? array_slice($articles, $offset, $limit) : [];
-        $has_more = ($offset + count($paged_articles)) < $total;
+        $paged = CWSB_Order_Repository::find_order_articles_page_by_order_id_for_seller_flow_token(
+            $flow_token,
+            $order_id,
+            $page,
+            $limit
+        );
 
         return CWSB_Response::ok([
-            'count' => is_array($paged_articles) ? count($paged_articles) : 0,
-            'total' => (int) $total,
-            'page' => (int) $page,
-            'limit' => (int) $limit,
-            'has_more' => (bool) $has_more,
-            'next_page' => $has_more ? (int) ($page + 1) : null,
-            'articles' => is_array($paged_articles) ? $paged_articles : [],
+            'count' => isset($paged['count']) ? (int) $paged['count'] : 0,
+            'total' => isset($paged['total']) ? (int) $paged['total'] : 0,
+            'page' => isset($paged['page']) ? (int) $paged['page'] : $page,
+            'limit' => isset($paged['limit']) ? (int) $paged['limit'] : $limit,
+            'has_more' => !empty($paged['has_more']),
+            'next_page' => isset($paged['next_page']) ? $paged['next_page'] : null,
+            'articles' => (isset($paged['articles']) && is_array($paged['articles'])) ? $paged['articles'] : [],
         ]);
     }
 }

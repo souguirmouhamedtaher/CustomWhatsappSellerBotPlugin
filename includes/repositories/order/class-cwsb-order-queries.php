@@ -19,13 +19,10 @@ if (!class_exists('CWSB_Utils')) {
  */
 class CWSB_Order_Queries
 {
-    const MAX_PRODUCT_IDS = 3000;
-
     /**
      * Find all order IDs for seller with optional limit.
      *
-     * Prefers wc_order_product_lookup table (faster) with fallback to order_items.
-     * Suspends WordPress auto-cache during query to prevent memory bloat.
+    * Uses WCFM marketplace order mapping by vendor_id.
      */
     public static function find_order_ids_for_seller($seller_user_id, $limit = null)
     {
@@ -40,61 +37,19 @@ class CWSB_Order_Queries
             return [];
         }
 
-        // Need to resolve products first
-        if (!class_exists('CWSB_Order_Resolver')) {
-            require_once __DIR__ . '/class-cwsb-order-resolver.php';
-        }
-        $product_ids = CWSB_Order_Resolver::find_seller_product_ids($seller_user_id, self::MAX_PRODUCT_IDS);
-        if (empty($product_ids)) {
+        $marketplace_orders_table = $wpdb->prefix . 'wcfm_marketplace_orders';
+        if (!self::table_exists($marketplace_orders_table)) {
             return [];
         }
 
-        $lookup_table = $wpdb->prefix . 'wc_order_product_lookup';
-        if (self::table_exists($lookup_table)) {
-            $product_placeholders = self::build_placeholders(count($product_ids), '%d');
-            $sql = "
-                SELECT DISTINCT o.ID
-                FROM {$lookup_table} opl
-                INNER JOIN {$wpdb->posts} o
-                    ON o.ID = opl.order_id
-                WHERE opl.product_id IN ({$product_placeholders})
-                  AND o.post_type = 'shop_order'
-                  AND o.post_status NOT IN ('trash', 'auto-draft')
-                ORDER BY o.post_date_gmt DESC, o.ID DESC
-            ";
-
-            if ($safe_limit !== null) {
-                $sql .= "\n                LIMIT %d\n";
-            }
-
-            $params = array_map('intval', $product_ids);
-            if ($safe_limit !== null) {
-                $params[] = (int) $safe_limit;
-            }
-            $rows = $wpdb->get_col($wpdb->prepare($sql, ...$params));
-            $ids = self::sanitize_int_ids($rows);
-            if (!empty($ids)) {
-                return $ids;
-            }
-        }
-
-        // Fallback for stores without wc_order_product_lookup.
-        $order_items_table = $wpdb->prefix . 'woocommerce_order_items';
-        $order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
-
-        $product_placeholders = self::build_placeholders(count($product_ids), '%d');
         $sql = "
             SELECT DISTINCT o.ID
-            FROM {$wpdb->posts} o
-            INNER JOIN {$order_items_table} oi
-                ON oi.order_id = o.ID
-               AND oi.order_item_type = 'line_item'
-            INNER JOIN {$order_itemmeta_table} oim
-                ON oim.order_item_id = oi.order_item_id
-               AND oim.meta_key = '_product_id'
-            WHERE o.post_type = 'shop_order'
+            FROM {$marketplace_orders_table} mo
+            INNER JOIN {$wpdb->posts} o
+                ON o.ID = mo.order_id
+            WHERE mo.vendor_id = %d
+              AND o.post_type = 'shop_order'
               AND o.post_status NOT IN ('trash', 'auto-draft')
-              AND CAST(oim.meta_value AS UNSIGNED) IN ({$product_placeholders})
             ORDER BY o.post_date_gmt DESC, o.ID DESC
         ";
 
@@ -102,7 +57,7 @@ class CWSB_Order_Queries
             $sql .= "\n            LIMIT %d\n";
         }
 
-        $params = array_map('intval', $product_ids);
+        $params = [(int) $seller_user_id];
         if ($safe_limit !== null) {
             $params[] = (int) $safe_limit;
         }
@@ -251,47 +206,18 @@ class CWSB_Order_Queries
             return false;
         }
 
-        $lookup_table = $wpdb->prefix . 'wc_order_product_lookup';
-        if (self::table_exists($lookup_table)) {
-            $sql = "
-                SELECT 1
-                FROM {$lookup_table} opl
-                INNER JOIN {$wpdb->posts} products
-                    ON products.ID = opl.product_id
-                INNER JOIN {$wpdb->posts} orders
-                    ON orders.ID = opl.order_id
-                WHERE opl.order_id = %d
-                  AND products.post_type = 'product'
-                  AND products.post_author = %d
-                  AND orders.post_type = 'shop_order'
-                  AND orders.post_status NOT IN ('trash', 'auto-draft')
-                LIMIT 1
-            ";
-
-            $found = (int) $wpdb->get_var($wpdb->prepare($sql, $order_id, $seller_user_id));
-            if ($found === 1) {
-                return true;
-            }
+        $marketplace_orders_table = $wpdb->prefix . 'wcfm_marketplace_orders';
+        if (!self::table_exists($marketplace_orders_table)) {
+            return false;
         }
-
-        // Fallback for stores without wc_order_product_lookup.
-        $order_items_table = $wpdb->prefix . 'woocommerce_order_items';
-        $order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
 
         $sql = "
             SELECT 1
-            FROM {$order_items_table} oi
-            INNER JOIN {$order_itemmeta_table} oim
-                ON oim.order_item_id = oi.order_item_id
-               AND oim.meta_key = '_product_id'
-            INNER JOIN {$wpdb->posts} products
-                ON products.ID = CAST(oim.meta_value AS UNSIGNED)
+            FROM {$marketplace_orders_table} mo
             INNER JOIN {$wpdb->posts} orders
-                ON orders.ID = oi.order_id
-            WHERE oi.order_id = %d
-              AND oi.order_item_type = 'line_item'
-              AND products.post_type = 'product'
-              AND products.post_author = %d
+                ON orders.ID = mo.order_id
+            WHERE mo.order_id = %d
+              AND mo.vendor_id = %d
               AND orders.post_type = 'shop_order'
               AND orders.post_status NOT IN ('trash', 'auto-draft')
             LIMIT 1
@@ -300,6 +226,78 @@ class CWSB_Order_Queries
         $found = (int) $wpdb->get_var($wpdb->prepare($sql, $order_id, $seller_user_id));
 
         return $found === 1;
+    }
+
+    /**
+     * Find paginated order line-item rows for an order.
+     */
+    public static function find_order_article_rows_by_order_id($order_id, $limit = null, $offset = 0)
+    {
+        global $wpdb;
+
+        $oid = (int) $order_id;
+        if ($oid <= 0) {
+            return [];
+        }
+
+        $safe_limit = null;
+        if ($limit !== null) {
+            $safe_limit = max(1, (int) $limit);
+        }
+        $safe_offset = max(0, (int) $offset);
+
+        $order_items_table = $wpdb->prefix . 'woocommerce_order_items';
+        $order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
+
+        $sql = "
+            SELECT
+                oi.order_item_id,
+                oi.order_item_name,
+                MAX(CASE WHEN oim.meta_key = '_product_id' THEN oim.meta_value END) AS product_id,
+                MAX(CASE WHEN oim.meta_key = '_variation_id' THEN oim.meta_value END) AS variation_id,
+                MAX(CASE WHEN oim.meta_key = '_qty' THEN oim.meta_value END) AS quantity,
+                MAX(CASE WHEN oim.meta_key = '_line_total' THEN oim.meta_value END) AS line_total,
+                MAX(CASE WHEN oim.meta_key = '_line_subtotal' THEN oim.meta_value END) AS line_subtotal
+            FROM {$order_items_table} oi
+            LEFT JOIN {$order_itemmeta_table} oim ON oim.order_item_id = oi.order_item_id
+            WHERE oi.order_id = %d
+              AND oi.order_item_type = 'line_item'
+            GROUP BY oi.order_item_id, oi.order_item_name
+            ORDER BY oi.order_item_id ASC
+        ";
+
+        $params = [$oid];
+        if ($safe_limit !== null) {
+            $sql .= "\n            LIMIT %d OFFSET %d\n";
+            $params[] = $safe_limit;
+            $params[] = $safe_offset;
+        }
+
+        $rows = $wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A);
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Count line items for an order.
+     */
+    public static function count_order_articles_by_order_id($order_id)
+    {
+        global $wpdb;
+
+        $oid = (int) $order_id;
+        if ($oid <= 0) {
+            return 0;
+        }
+
+        $order_items_table = $wpdb->prefix . 'woocommerce_order_items';
+        $sql = "
+            SELECT COUNT(*)
+            FROM {$order_items_table}
+            WHERE order_id = %d
+              AND order_item_type = 'line_item'
+        ";
+
+        return (int) $wpdb->get_var($wpdb->prepare($sql, $oid));
     }
 
     /**

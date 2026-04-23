@@ -96,9 +96,19 @@ class CWSB_Order_Mapper
      */
     public static function map_order_articles($row)
     {
-        $articles = [];
         $currency = CWSB_Utils::normalize_text(isset($row['order_currency']) ? $row['order_currency'] : '');
         $item_rows = self::find_order_article_rows(isset($row['ID']) ? (int) $row['ID'] : 0);
+
+        return self::map_order_articles_from_rows($item_rows, $currency);
+    }
+
+    /**
+     * Transform order article rows from database into API format.
+     */
+    public static function map_order_articles_from_rows($item_rows, $currency)
+    {
+        $articles = [];
+        $currency = CWSB_Utils::normalize_text($currency);
 
         foreach ((array) $item_rows as $item) {
             $product_id = (int) ($item['product_id'] ?? 0);
