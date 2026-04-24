@@ -28,4 +28,27 @@ class CWSB_Seller_Read_Normalizer
             'auth_portal_sent_at' => isset($row['auth_portal_sent_at']) && $row['auth_portal_sent_at'] !== null ? (int) $row['auth_portal_sent_at'] : null,
         ];
     }
+
+    public static function normalize_seller_row_for_dashboard($row)
+    {
+        $session_active_until = isset($row['session_active_until']) && $row['session_active_until'] !== null
+            ? (int) $row['session_active_until']
+            : null;
+
+        $now_ms = (int) round(microtime(true) * 1000);
+
+        return [
+            'user_id'              => isset($row['user_id']) ? (int) $row['user_id'] : 0,
+            'name'                 => isset($row['name']) ? (string) $row['name'] : '',
+            'email'                => isset($row['email']) ? (string) $row['email'] : '',
+            'phone'                => isset($row['phone']) ? (string) $row['phone'] : '',
+            'session_active'       => $session_active_until !== null && $session_active_until > $now_ms,
+            'session_active_until' => $session_active_until,
+            'auth_portal_sent_at'  => isset($row['auth_portal_sent_at']) && $row['auth_portal_sent_at'] !== null
+                ? (int) $row['auth_portal_sent_at']
+                : null,
+            'product_count'        => isset($row['product_count']) ? (int) $row['product_count'] : 0,
+            'order_count'          => isset($row['order_count']) ? (int) $row['order_count'] : 0,
+        ];
+    }
 }

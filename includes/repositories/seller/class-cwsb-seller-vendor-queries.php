@@ -227,4 +227,65 @@ class CWSB_Seller_Vendor_Queries
 
         return (int) $wpdb->get_var($wpdb->prepare($sql, $cap_key, self::vendor_capability_like()));
     }
+
+    public static function get_dashboard_seller_rows($page, $per_page)
+    {
+        global $wpdb;
+
+        $page     = max(1, (int) $page);
+        $per_page = max(1, min((int) $per_page, 200));
+        $offset   = ($page - 1) * $per_page;
+        $cap_key  = $wpdb->prefix . 'capabilities';
+
+        $state_table  = $wpdb->prefix . 'cwsb_seller_state';
+        $orders_table = $wpdb->prefix . 'wcfm_marketplace_orders';
+
+        $sql = "
+            SELECT
+                u.ID                                                                               AS user_id,
+                u.display_name                                                                     AS name,
+                u.user_email                                                                       AS email,
+                COALESCE(bp.meta_value, ph.meta_value, wfp.meta_value, '')                        AS phone,
+                s.flow_token,
+                s.session_active_until,
+                s.auth_portal_sent_at,
+                (
+                    SELECT COUNT(1)
+                    FROM {$wpdb->posts} prod
+                    WHERE prod.post_author = u.ID
+                      AND prod.post_type   = 'product'
+                      AND prod.post_status IN ('publish', 'private')
+                ) AS product_count,
+                (
+                    SELECT COUNT(1)
+                    FROM {$orders_table} wo
+                    WHERE wo.vendor_id = u.ID
+                ) AS order_count
+            FROM {$wpdb->users} u
+            INNER JOIN {$wpdb->usermeta} caps
+                ON caps.user_id  = u.ID
+               AND caps.meta_key = %s
+            LEFT JOIN {$wpdb->usermeta} bp
+                ON bp.user_id  = u.ID
+               AND bp.meta_key = 'billing_phone'
+            LEFT JOIN {$wpdb->usermeta} ph
+                ON ph.user_id  = u.ID
+               AND ph.meta_key = 'phone'
+            LEFT JOIN {$wpdb->usermeta} wfp
+                ON wfp.user_id  = u.ID
+               AND wfp.meta_key = 'wcfm_phone'
+            LEFT JOIN {$state_table} s
+                ON s.user_id = u.ID
+            WHERE caps.meta_value LIKE %s
+            ORDER BY u.ID DESC
+            LIMIT %d OFFSET %d
+        ";
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare($sql, $cap_key, self::vendor_capability_like(), $per_page, $offset),
+            ARRAY_A
+        );
+
+        return is_array($rows) ? $rows : [];
+    }
 }

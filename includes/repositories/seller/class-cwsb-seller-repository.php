@@ -87,6 +87,11 @@ class CWSB_Seller_Repository
         return CWSB_Seller_Read_Repository::get_all_sellers($page, $per_page);
     }
 
+    public static function get_all_sellers_for_dashboard($page = 1, $per_page = 50)
+    {
+        return CWSB_Seller_Read_Repository::get_all_sellers_for_dashboard($page, $per_page);
+    }
+
     public static function count_all_sellers()
     {
         return CWSB_Seller_Read_Repository::count_all_sellers();

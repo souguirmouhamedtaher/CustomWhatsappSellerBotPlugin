@@ -193,5 +193,15 @@ class CWSB_Auth_Controller
             ],
         ]);
 
+        register_rest_route(CWSB_NS, '/seller/dashboard/all', [
+            'methods'             => 'GET',
+            'callback'            => ['CWSB_Auth_Seller_Endpoints_Service', 'get_all_sellers_for_dashboard'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args'                => [
+                'page'     => ['required' => false, 'default' => 1],
+                'per_page' => ['required' => false, 'default' => 50],
+            ],
+        ]);
+
     }
 }

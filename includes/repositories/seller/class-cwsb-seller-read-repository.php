@@ -211,4 +211,22 @@ class CWSB_Seller_Read_Repository
 
         return $sellers;
     }
+
+    public static function get_all_sellers_for_dashboard($page = 1, $per_page = 50)
+    {
+        $per_page = max(1, min((int) $per_page, 200));
+
+        $rows = CWSB_Seller_Read_Queries::get_dashboard_seller_rows((int) $page, $per_page);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $sellers = [];
+        foreach ($rows as $row) {
+            $row['phone'] = CWSB_Utils::normalize_phone(isset($row['phone']) ? $row['phone'] : '');
+            $sellers[]    = CWSB_Seller_Read_Normalizer::normalize_seller_row_for_dashboard($row);
+        }
+
+        return $sellers;
+    }
 }

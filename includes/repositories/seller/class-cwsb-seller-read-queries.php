@@ -91,4 +91,9 @@ class CWSB_Seller_Read_Queries
             self::vendor_capability_like()
         );
     }
+
+    public static function get_dashboard_seller_rows($page, $per_page)
+    {
+        return CWSB_Seller_Vendor_Queries::get_dashboard_seller_rows($page, $per_page);
+    }
 }
