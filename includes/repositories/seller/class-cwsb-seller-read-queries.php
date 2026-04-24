@@ -96,4 +96,19 @@ class CWSB_Seller_Read_Queries
     {
         return CWSB_Seller_Vendor_Queries::get_dashboard_seller_rows($page, $per_page);
     }
+
+    public static function get_active_dashboard_seller_rows($page, $per_page)
+    {
+        return CWSB_Seller_Vendor_Queries::get_active_dashboard_seller_rows($page, $per_page);
+    }
+
+    public static function count_active_sellers()
+    {
+        return CWSB_Seller_Vendor_Queries::count_active_sellers();
+    }
+
+    public static function find_dashboard_seller_row_by_user_id($user_id)
+    {
+        return CWSB_Seller_Vendor_Queries::find_dashboard_seller_row_by_user_id($user_id);
+    }
 }

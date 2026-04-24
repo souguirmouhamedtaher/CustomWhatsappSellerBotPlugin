@@ -229,4 +229,59 @@ class CWSB_Seller_Read_Repository
 
         return $sellers;
     }
+
+    public static function get_active_sellers_for_dashboard($page = 1, $per_page = 50)
+    {
+        $per_page = max(1, min((int) $per_page, 200));
+
+        $rows = CWSB_Seller_Read_Queries::get_active_dashboard_seller_rows((int) $page, $per_page);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $sellers = [];
+        foreach ($rows as $row) {
+            $row['phone'] = CWSB_Utils::normalize_phone(isset($row['phone']) ? $row['phone'] : '');
+            $sellers[]    = CWSB_Seller_Read_Normalizer::normalize_seller_row_for_dashboard($row);
+        }
+
+        return $sellers;
+    }
+
+    public static function count_active_sellers()
+    {
+        return CWSB_Seller_Read_Queries::count_active_sellers();
+    }
+
+    public static function find_dashboard_seller_by_phone($phone)
+    {
+        $vendor = self::find_vendor_by_phone($phone);
+        if (!$vendor || empty($vendor['user_id'])) {
+            return null;
+        }
+
+        $row = CWSB_Seller_Read_Queries::find_dashboard_seller_row_by_user_id((int) $vendor['user_id']);
+        if (!$row) {
+            return null;
+        }
+
+        $row['phone'] = CWSB_Utils::normalize_phone(isset($row['phone']) ? $row['phone'] : '');
+        return CWSB_Seller_Read_Normalizer::normalize_seller_row_for_dashboard($row);
+    }
+
+    public static function find_dashboard_seller_by_email($email)
+    {
+        $vendor = self::find_vendor_by_email($email);
+        if (!$vendor || empty($vendor['user_id'])) {
+            return null;
+        }
+
+        $row = CWSB_Seller_Read_Queries::find_dashboard_seller_row_by_user_id((int) $vendor['user_id']);
+        if (!$row) {
+            return null;
+        }
+
+        $row['phone'] = CWSB_Utils::normalize_phone(isset($row['phone']) ? $row['phone'] : '');
+        return CWSB_Seller_Read_Normalizer::normalize_seller_row_for_dashboard($row);
+    }
 }

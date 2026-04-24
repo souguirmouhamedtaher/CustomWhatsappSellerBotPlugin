@@ -120,4 +120,19 @@ class CWSB_Auth_Seller_Endpoints_Service
     {
         return CWSB_Auth_Seller_Core_Service::get_all_sellers_for_dashboard($request);
     }
+
+    public static function get_active_sellers_for_dashboard(WP_REST_Request $request)
+    {
+        return CWSB_Auth_Seller_Core_Service::get_active_sellers_for_dashboard($request);
+    }
+
+    public static function get_dashboard_seller_by_phone(WP_REST_Request $request)
+    {
+        return CWSB_Auth_Seller_Core_Service::get_dashboard_seller_by_phone($request);
+    }
+
+    public static function get_dashboard_seller_by_email(WP_REST_Request $request)
+    {
+        return CWSB_Auth_Seller_Core_Service::get_dashboard_seller_by_email($request);
+    }
 }
