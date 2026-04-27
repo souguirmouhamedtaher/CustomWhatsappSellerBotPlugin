@@ -78,6 +78,20 @@ if (!defined('CWSB_MAX_PRODUCT_IDS')) {
 }
 
 // ============================================================================
+// Wallet / Finance Configuration
+// ============================================================================
+
+/** Commission rate applied to seller net revenue (22.61%) */
+if (!defined('CWSB_WALLET_COMMISSION_RATE')) {
+    define('CWSB_WALLET_COMMISSION_RATE', 0.2261);
+}
+
+/** EUR to TND conversion rate */
+if (!defined('CWSB_EUR_TO_TND_RATE')) {
+    define('CWSB_EUR_TO_TND_RATE', 3.358);
+}
+
+// ============================================================================
 // Performance & Debugging
 // ============================================================================
 

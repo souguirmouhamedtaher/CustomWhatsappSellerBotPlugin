@@ -231,5 +231,14 @@ class CWSB_Auth_Controller
             ],
         ]);
 
+        register_rest_route(CWSB_NS, '/seller/wallet/by-flow-token', [
+            'methods'             => 'POST',
+            'callback'            => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_wallet_by_flow_token'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args'                => [
+                'flow_token' => ['required' => true],
+            ],
+        ]);
+
     }
 }

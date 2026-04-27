@@ -135,4 +135,9 @@ class CWSB_Auth_Seller_Endpoints_Service
     {
         return CWSB_Auth_Seller_Core_Service::get_dashboard_seller_by_email($request);
     }
+
+    public static function get_seller_wallet_by_flow_token(WP_REST_Request $request)
+    {
+        return CWSB_Auth_Order_Endpoints_Service::get_seller_wallet_by_flow_token($request);
+    }
 }

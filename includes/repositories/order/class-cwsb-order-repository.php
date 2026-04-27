@@ -390,4 +390,85 @@ class CWSB_Order_Repository
             'articles' => $articles,
         ];
     }
+
+    /**
+     * Compute wallet balances for a seller user ID.
+     */
+    public static function compute_wallet_by_seller_user_id($seller_user_id)
+    {
+        $uid = (int) $seller_user_id;
+        if ($uid <= 0) {
+            return self::empty_wallet();
+        }
+
+        $commission_rate = defined('CWSB_WALLET_COMMISSION_RATE') ? (float) CWSB_WALLET_COMMISSION_RATE : 0.2261;
+        $eur_to_tnd      = defined('CWSB_EUR_TO_TND_RATE')        ? (float) CWSB_EUR_TO_TND_RATE        : 3.358;
+
+        $rows = CWSB_Order_Queries::compute_wallet_subtotals_by_seller($uid);
+
+        $tnd_balance     = 0.0;
+        $eur_balance     = 0.0;
+        $delivered_count = 0;
+
+        foreach ($rows as $row) {
+            $currency = strtoupper(trim((string) ($row['currency'] ?? '')));
+            $subtotal = (float) ($row['total_subtotal'] ?? 0);
+            $net      = $subtotal * (1 - $commission_rate);
+            $count    = (int) ($row['order_count'] ?? 0);
+
+            $delivered_count += $count;
+
+            if ($currency === 'TND') {
+                $tnd_balance += $net;
+            } else {
+                $eur_balance += $net;
+            }
+        }
+
+        $combined_tnd = $tnd_balance + $eur_balance * $eur_to_tnd;
+
+        return [
+            'tnd_balance'           => round($tnd_balance, 4),
+            'eur_balance'           => round($eur_balance, 4),
+            'combined_tnd'          => round($combined_tnd, 4),
+            'commission_rate'       => $commission_rate,
+            'eur_to_tnd_rate'       => $eur_to_tnd,
+            'delivered_order_count' => $delivered_count,
+        ];
+    }
+
+    /**
+     * Find wallet by seller flow token.
+     */
+    public static function find_wallet_by_flow_token($flow_token)
+    {
+        $token = CWSB_Utils::normalize_text($flow_token);
+        if ($token === '') {
+            return null;
+        }
+
+        $seller_user_id = CWSB_Order_Resolver::resolve_seller_user_id_by_flow_token($token);
+        if ($seller_user_id <= 0) {
+            return null;
+        }
+
+        return self::compute_wallet_by_seller_user_id($seller_user_id);
+    }
+
+    /**
+     * Empty wallet structure.
+     */
+    private static function empty_wallet()
+    {
+        $commission_rate = defined('CWSB_WALLET_COMMISSION_RATE') ? (float) CWSB_WALLET_COMMISSION_RATE : 0.2261;
+        $eur_to_tnd      = defined('CWSB_EUR_TO_TND_RATE')        ? (float) CWSB_EUR_TO_TND_RATE        : 3.358;
+        return [
+            'tnd_balance'           => 0.0,
+            'eur_balance'           => 0.0,
+            'combined_tnd'          => 0.0,
+            'commission_rate'       => $commission_rate,
+            'eur_to_tnd_rate'       => $eur_to_tnd,
+            'delivered_order_count' => 0,
+        ];
+    }
 }

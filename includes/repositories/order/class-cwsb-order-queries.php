@@ -416,4 +416,59 @@ class CWSB_Order_Queries
             return $v > 0;
         }));
     }
+
+    /**
+     * Compute wallet subtotals per currency for a seller.
+     *
+     * Single aggregated query — no N+1.
+     * Inner: per completed order → articles_subtotal = total − shipping − tax + discount
+     * Outer: SUM by currency
+     *
+     * Returns: [['currency' => 'TND', 'total_subtotal' => 12345.67, 'order_count' => 80], ...]
+     */
+    public static function compute_wallet_subtotals_by_seller($seller_user_id)
+    {
+        global $wpdb;
+
+        $uid = (int) $seller_user_id;
+        if ($uid <= 0) {
+            return [];
+        }
+
+        $marketplace_orders_table = $wpdb->prefix . 'wcfm_marketplace_orders';
+        if (!self::table_exists($marketplace_orders_table)) {
+            return [];
+        }
+
+        $sql = "
+            SELECT
+                currency,
+                SUM(articles_subtotal) AS total_subtotal,
+                COUNT(*)               AS order_count
+            FROM (
+                SELECT
+                    MAX(CASE WHEN pm.meta_key = '_order_currency'  THEN pm.meta_value END) AS currency,
+                    (
+                        COALESCE(CAST(MAX(CASE WHEN pm.meta_key = '_order_total'    THEN pm.meta_value END) AS DECIMAL(10,4)), 0)
+                        - COALESCE(CAST(MAX(CASE WHEN pm.meta_key = '_order_shipping' THEN pm.meta_value END) AS DECIMAL(10,4)), 0)
+                        - COALESCE(CAST(MAX(CASE WHEN pm.meta_key = '_order_tax'      THEN pm.meta_value END) AS DECIMAL(10,4)), 0)
+                        + COALESCE(CAST(MAX(CASE WHEN pm.meta_key = '_cart_discount'  THEN pm.meta_value END) AS DECIMAL(10,4)), 0)
+                    ) AS articles_subtotal
+                FROM {$marketplace_orders_table} mo
+                INNER JOIN {$wpdb->posts} p
+                    ON  p.ID          = mo.order_id
+                    AND p.post_type   = 'shop_order'
+                    AND p.post_status = 'wc-completed'
+                LEFT JOIN {$wpdb->postmeta} pm
+                    ON  pm.post_id  = p.ID
+                    AND pm.meta_key IN ('_order_total', '_order_shipping', '_order_tax', '_cart_discount', '_order_currency')
+                WHERE mo.vendor_id = %d
+                GROUP BY p.ID
+            ) t
+            GROUP BY currency
+        ";
+
+        $rows = $wpdb->get_results($wpdb->prepare($sql, $uid), ARRAY_A);
+        return is_array($rows) ? $rows : [];
+    }
 }

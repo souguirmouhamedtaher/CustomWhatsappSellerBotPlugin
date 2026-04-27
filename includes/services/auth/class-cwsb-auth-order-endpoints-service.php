@@ -146,4 +146,21 @@ class CWSB_Auth_Order_Endpoints_Service
             'articles' => (isset($paged['articles']) && is_array($paged['articles'])) ? $paged['articles'] : [],
         ]);
     }
+
+    public static function get_seller_wallet_by_flow_token(WP_REST_Request $request)
+    {
+        $flow_token = (string) $request->get_param('flow_token');
+
+        if (trim($flow_token) === '') {
+            return CWSB_Response::error('invalid_request', 'flow_token is required.', 422);
+        }
+
+        $wallet = CWSB_Order_Repository::find_wallet_by_flow_token($flow_token);
+
+        if ($wallet === null) {
+            return CWSB_Response::error('not_found', 'Seller not found for given flow_token.', 404);
+        }
+
+        return CWSB_Response::ok(['wallet' => $wallet]);
+    }
 }
