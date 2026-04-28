@@ -16,6 +16,10 @@ if (!class_exists('CWSB_Auth_Order_Endpoints_Service')) {
     require_once __DIR__ . '/class-cwsb-auth-order-endpoints-service.php';
 }
 
+if (!class_exists('CWSB_Auth_Wallet_Endpoints_Service')) {
+    require_once __DIR__ . '/class-cwsb-auth-wallet-endpoints-service.php';
+}
+
 /**
  * Backward-compatible facade for auth endpoint handlers.
  */
@@ -138,6 +142,16 @@ class CWSB_Auth_Seller_Endpoints_Service
 
     public static function get_seller_wallet_by_flow_token(WP_REST_Request $request)
     {
-        return CWSB_Auth_Order_Endpoints_Service::get_seller_wallet_by_flow_token($request);
+        return CWSB_Auth_Wallet_Endpoints_Service::get_seller_wallet_by_flow_token($request);
+    }
+
+    public static function get_seller_wallet_summary_by_flow_token(WP_REST_Request $request)
+    {
+        return CWSB_Auth_Wallet_Endpoints_Service::get_seller_wallet_summary_by_flow_token($request);
+    }
+
+    public static function get_seller_wallet_transactions_by_flow_token(WP_REST_Request $request)
+    {
+        return CWSB_Auth_Wallet_Endpoints_Service::get_seller_wallet_transactions_by_flow_token($request);
     }
 }

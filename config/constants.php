@@ -91,6 +91,11 @@ if (!defined('CWSB_EUR_TO_TND_RATE')) {
     define('CWSB_EUR_TO_TND_RATE', 3.358);
 }
 
+/** Maximum transactions per page in wallet pagination */
+if (!defined('CWSB_WALLET_TX_PAGE_LIMIT')) {
+    define('CWSB_WALLET_TX_PAGE_LIMIT', 5);
+}
+
 // ============================================================================
 // Performance & Debugging
 // ============================================================================
