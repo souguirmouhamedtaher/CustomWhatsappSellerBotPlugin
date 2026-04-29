@@ -138,6 +138,16 @@ class CWSB_Seller_Read_Repository
         return CWSB_Seller_Read_Normalizer::normalize_seller_row($row);
     }
 
+    public static function find_state_seller_by_email($email)
+    {
+        $row = CWSB_Seller_Read_Queries::find_state_seller_row_by_email($email);
+        if (!is_array($row)) {
+            return null;
+        }
+
+        return CWSB_Seller_Read_Normalizer::normalize_seller_row($row);
+    }
+
     public static function get_all_sellers($page = 1, $per_page = 50)
     {
         $per_page = (int) $per_page;

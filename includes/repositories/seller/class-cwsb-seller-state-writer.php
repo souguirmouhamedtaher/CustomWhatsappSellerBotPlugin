@@ -305,31 +305,47 @@ class CWSB_Seller_State_Writer
 
     public static function set_reset_token_by_email($email, $reset_token, $reset_token_expiry)
     {
-        $seller = CWSB_Seller_Read_Repository::find_vendor_by_email($email);
-        if (!$seller || !isset($seller['user_id'])) {
+        global $wpdb;
+
+        $mail = CWSB_Utils::normalize_text($email);
+        if ($mail === '') {
             return null;
         }
 
-        $uid = (int) $seller['user_id'];
-        $ok = self::save_seller_state($uid, [
-            'reset_token'        => (string) $reset_token,
-            'reset_token_expiry' => PHP_INT_SIZE >= 8 ? (int) $reset_token_expiry : (float) $reset_token_expiry,
-        ]);
+        $table = CWSB_Seller_Read_Repository::state_table_name();
 
-        if (!$ok) {
+        $uid = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT user_id FROM {$table} WHERE LOWER(email) = LOWER(%s) LIMIT 1",
+                $mail
+            )
+        );
+
+        if ($uid <= 0) {
+            error_log('[CWSB] set_reset_token_by_email: state-table miss for email=' . $mail . ' wpdb_err=' . $wpdb->last_error);
             return null;
         }
 
-        // Read back from state table so the response includes reset_token + reset_token_expiry.
-        $phone = isset($seller['phone']) ? (string) $seller['phone'] : '';
-        if ($phone !== '') {
-            $state_seller = CWSB_Seller_Read_Repository::find_state_seller_by_phone($phone);
-            if ($state_seller) {
-                return $state_seller;
-            }
+        $expiry  = PHP_INT_SIZE >= 8 ? (int) $reset_token_expiry : (float) $reset_token_expiry;
+        $updated = $wpdb->update(
+            $table,
+            [
+                'reset_token'        => (string) $reset_token,
+                'reset_token_expiry' => $expiry,
+            ],
+            ['user_id' => $uid],
+            ['%s', '%d'],
+            ['%d']
+        );
+
+        if ($updated === false) {
+            error_log('[CWSB] set_reset_token_by_email: update failed for uid=' . $uid . ' wpdb_err=' . $wpdb->last_error);
+            return null;
         }
 
-        return CWSB_Seller_Read_Repository::find_vendor_by_user_id($uid);
+        CWSB_Seller_State_Cache_Invalidator::invalidate_seller_read_caches($uid, [], []);
+
+        return CWSB_Seller_Read_Repository::find_state_seller_by_email($mail);
     }
 
     public static function mark_auth_portal_sent_by_phone($phone, $sent_at)

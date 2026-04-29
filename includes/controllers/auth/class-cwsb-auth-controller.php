@@ -193,44 +193,6 @@ class CWSB_Auth_Controller
             ],
         ]);
 
-        register_rest_route(CWSB_NS, '/seller/dashboard/all', [
-            'methods'             => 'GET',
-            'callback'            => ['CWSB_Auth_Seller_Endpoints_Service', 'get_all_sellers_for_dashboard'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args'                => [
-                'page'     => ['required' => false, 'default' => 1],
-                'per_page' => ['required' => false, 'default' => 50],
-            ],
-        ]);
-
-        register_rest_route(CWSB_NS, '/seller/dashboard/active', [
-            'methods'             => 'GET',
-            'callback'            => ['CWSB_Auth_Seller_Endpoints_Service', 'get_active_sellers_for_dashboard'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args'                => [
-                'page'     => ['required' => false, 'default' => 1],
-                'per_page' => ['required' => false, 'default' => 50],
-            ],
-        ]);
-
-        register_rest_route(CWSB_NS, '/seller/dashboard/by-phone', [
-            'methods'             => 'POST',
-            'callback'            => ['CWSB_Auth_Seller_Endpoints_Service', 'get_dashboard_seller_by_phone'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args'                => [
-                'phone' => ['required' => true],
-            ],
-        ]);
-
-        register_rest_route(CWSB_NS, '/seller/dashboard/by-email', [
-            'methods'             => 'POST',
-            'callback'            => ['CWSB_Auth_Seller_Endpoints_Service', 'get_dashboard_seller_by_email'],
-            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args'                => [
-                'email' => ['required' => true],
-            ],
-        ]);
-
         register_rest_route(CWSB_NS, '/seller/wallet/by-flow-token', [
             'methods'             => 'POST',
             'callback'            => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_wallet_by_flow_token'],

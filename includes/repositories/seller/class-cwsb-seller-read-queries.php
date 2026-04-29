@@ -72,6 +72,11 @@ class CWSB_Seller_Read_Queries
         return CWSB_Seller_State_Queries::get_state_by_user_id($user_id);
     }
 
+    public static function find_state_seller_row_by_email($email)
+    {
+        return CWSB_Seller_State_Queries::find_state_seller_row_by_email($email);
+    }
+
     public static function find_user_id_by_flow_token($flow_token)
     {
         return CWSB_Seller_State_Queries::find_user_id_by_flow_token($flow_token);

@@ -120,26 +120,6 @@ class CWSB_Auth_Seller_Endpoints_Service
         return CWSB_Auth_Order_Endpoints_Service::get_seller_order_articles_by_id($request);
     }
 
-    public static function get_all_sellers_for_dashboard(WP_REST_Request $request)
-    {
-        return CWSB_Auth_Seller_Core_Service::get_all_sellers_for_dashboard($request);
-    }
-
-    public static function get_active_sellers_for_dashboard(WP_REST_Request $request)
-    {
-        return CWSB_Auth_Seller_Core_Service::get_active_sellers_for_dashboard($request);
-    }
-
-    public static function get_dashboard_seller_by_phone(WP_REST_Request $request)
-    {
-        return CWSB_Auth_Seller_Core_Service::get_dashboard_seller_by_phone($request);
-    }
-
-    public static function get_dashboard_seller_by_email(WP_REST_Request $request)
-    {
-        return CWSB_Auth_Seller_Core_Service::get_dashboard_seller_by_email($request);
-    }
-
     public static function get_seller_wallet_by_flow_token(WP_REST_Request $request)
     {
         return CWSB_Auth_Wallet_Endpoints_Service::get_seller_wallet_by_flow_token($request);

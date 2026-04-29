@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom WhatsApp Seller Bot
 Description: Seller lookup endpoints for WhatsApp bot.
-Version: 1.0.12
+Version: 1.0.13
 Author: ILEYCOM-INTERNSHIPS
 */
 
@@ -179,10 +179,12 @@ function cwsb_register_rest_routes()
     require_once CWSB_PLUGIN_DIR . 'includes/controllers/auth/class-cwsb-auth-controller.php';
     require_once CWSB_PLUGIN_DIR . 'includes/controllers/add-product/class-cwsb-add-product-controller.php';
     require_once CWSB_PLUGIN_DIR . 'includes/controllers/update-product/class-cwsb-update-product-controller.php';
+    require_once CWSB_PLUGIN_DIR . 'includes/controllers/dashboard/class-cwsb-dashboard-controller.php';
 
     CWSB_Auth_Controller::register_routes();
     CWSB_Add_Product_Controller::register_routes();
     CWSB_Update_Product_Controller::register_routes();
+    CWSB_Dashboard_Controller::register_routes();
 }
 
 /**

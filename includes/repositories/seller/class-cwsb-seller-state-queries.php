@@ -73,6 +73,30 @@ class CWSB_Seller_State_Queries
         );
     }
 
+    public static function find_state_seller_row_by_email($email)
+    {
+        global $wpdb;
+
+        $mail = CWSB_Utils::normalize_text($email);
+        if ($mail === '') {
+            return null;
+        }
+
+        $table = self::state_table_name();
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT user_id, name, email, phone, code, flow_token, reset_token, reset_token_expiry, session_active_until, auth_portal_sent_at
+                 FROM {$table}
+                 WHERE LOWER(email) = LOWER(%s)
+                 LIMIT 1",
+                $mail
+            ),
+            ARRAY_A
+        );
+
+        return is_array($row) ? $row : null;
+    }
+
     public static function get_state_by_user_id($user_id)
     {
         global $wpdb;
