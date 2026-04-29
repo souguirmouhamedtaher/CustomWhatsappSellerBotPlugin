@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom WhatsApp Seller Bot
 Description: Seller lookup endpoints for WhatsApp bot.
-Version: 1.0.11
+Version: 1.0.12
 Author: ILEYCOM-INTERNSHIPS
 */
 
@@ -150,6 +150,21 @@ function cwsb_upgrade_schema_if_needed()
     $portal_idx = $wpdb->get_var("SHOW INDEX FROM {$table_name} WHERE Key_name = 'auth_portal_sent_at'");
     if (!$portal_idx) {
         $wpdb->query("ALTER TABLE {$table_name} ADD KEY auth_portal_sent_at (auth_portal_sent_at)");
+    }
+
+    $reset_token_col = $wpdb->get_var("SHOW COLUMNS FROM {$table_name} LIKE 'reset_token'");
+    if (!$reset_token_col) {
+        $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN reset_token VARCHAR(255) NULL AFTER code");
+    }
+
+    $reset_token_expiry_col = $wpdb->get_var("SHOW COLUMNS FROM {$table_name} LIKE 'reset_token_expiry'");
+    if (!$reset_token_expiry_col) {
+        $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN reset_token_expiry BIGINT(20) NULL AFTER reset_token");
+    }
+
+    $reset_token_idx = $wpdb->get_var("SHOW INDEX FROM {$table_name} WHERE Key_name = 'reset_token'");
+    if (!$reset_token_idx) {
+        $wpdb->query("ALTER TABLE {$table_name} ADD KEY reset_token (reset_token)");
     }
 }
 

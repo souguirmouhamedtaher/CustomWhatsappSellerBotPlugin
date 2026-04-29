@@ -64,8 +64,14 @@ class CWSB_Seller_State_Writer
             $wpdb->prepare("SELECT user_id FROM {$table} WHERE user_id = %d LIMIT 1", $user_id)
         );
 
+        $bigint_fields = ['reset_token_expiry', 'session_active_until', 'auth_portal_sent_at'];
+        $data_formats = [];
+        foreach (array_keys($data) as $k) {
+            $data_formats[] = in_array($k, $bigint_fields, true) ? '%d' : '%s';
+        }
+
         if ($exists > 0) {
-            $updated = $wpdb->update($table, $data, ['user_id' => $user_id]);
+            $updated = $wpdb->update($table, $data, ['user_id' => $user_id], $data_formats, ['%d']);
             if ($updated === false) {
                 return false;
             }
@@ -122,7 +128,11 @@ class CWSB_Seller_State_Writer
         }
 
         $insert_data = array_merge(['user_id' => $user_id], $data);
-        $inserted = $wpdb->insert($table, $insert_data);
+        $insert_formats = ['%d']; // user_id
+        foreach (array_keys($data) as $k) {
+            $insert_formats[] = in_array($k, $bigint_fields, true) ? '%d' : '%s';
+        }
+        $inserted = $wpdb->insert($table, $insert_data, $insert_formats);
         if ($inserted === false) {
             return false;
         }
@@ -302,12 +312,21 @@ class CWSB_Seller_State_Writer
 
         $uid = (int) $seller['user_id'];
         $ok = self::save_seller_state($uid, [
-            'reset_token' => (string) $reset_token,
-            'reset_token_expiry' => (int) $reset_token_expiry,
+            'reset_token'        => (string) $reset_token,
+            'reset_token_expiry' => PHP_INT_SIZE >= 8 ? (int) $reset_token_expiry : (float) $reset_token_expiry,
         ]);
 
         if (!$ok) {
             return null;
+        }
+
+        // Read back from state table so the response includes reset_token + reset_token_expiry.
+        $phone = isset($seller['phone']) ? (string) $seller['phone'] : '';
+        if ($phone !== '') {
+            $state_seller = CWSB_Seller_Read_Repository::find_state_seller_by_phone($phone);
+            if ($state_seller) {
+                return $state_seller;
+            }
         }
 
         return CWSB_Seller_Read_Repository::find_vendor_by_user_id($uid);

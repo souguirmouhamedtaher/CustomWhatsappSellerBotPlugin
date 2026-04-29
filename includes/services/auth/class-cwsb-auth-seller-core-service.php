@@ -221,7 +221,10 @@ class CWSB_Auth_Seller_Core_Service
         }
 
         $seller = CWSB_Seller_Repository::set_reset_token_by_email($email, $reset_token, $reset_token_expiry);
-        return CWSB_Response::ok(['seller' => $seller ?: null]);
+        if ($seller === null) {
+            return CWSB_Response::error('write_failed', 'Could not persist reset token — seller not found or DB error.', 500);
+        }
+        return CWSB_Response::ok(['seller' => $seller]);
     }
 
     public static function get_all_sellers_for_dashboard(WP_REST_Request $request)
