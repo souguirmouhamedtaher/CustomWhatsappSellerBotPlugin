@@ -3,5 +3,5 @@
 # Generated plugin logs
 /logs/*.log
 !/logs/.htaccess
-
+/docs/*.md
 /logs/*.log

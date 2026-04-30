@@ -1,6 +1,4 @@
-# WhatsApp Flow — Order Manager (v1.0.14)
 
-```json
 {
     "version": "7.3",
     "data_api_version": "3.0",
@@ -240,16 +238,16 @@
                 "has_next":   { "type": "boolean", "__example__": true },
                 "has_prev":   { "type": "boolean", "__example__": false },
                 "page_label": { "type": "string",  "__example__": "Page 1 / 2" },
-                "p1_img":       { "type": "string",  "__example__": "https://example.com/chechia-verte.jpg" },
+                "p1_img":       { "type": "string",  "__example__": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" },
                 "p1_name":      { "type": "string",  "__example__": "Chéchia Tunisienne Verte En Laine - 60 cm" },
                 "p1_sku":       { "type": "string",  "__example__": "CHVRT60" },
                 "p1_qty_price": { "type": "string",  "__example__": "1 × 39.90 TND" },
-                "p2_img":       { "type": "string",  "__example__": "https://example.com/chechia-rouge.jpg" },
+                "p2_img":       { "type": "string",  "__example__": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" },
                 "p2_name":      { "type": "string",  "__example__": "Chechia tunisienne rouge en laine - 60 cm" },
                 "p2_sku":       { "type": "string",  "__example__": "CHROU60" },
                 "p2_qty_price": { "type": "string",  "__example__": "1 × 39.90 TND" },
                 "p2_visible":   { "type": "boolean", "__example__": true },
-                "p3_img":       { "type": "string",  "__example__": "https://example.com/chechia-bleu.jpg" },
+                "p3_img":       { "type": "string",  "__example__": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" },
                 "p3_name":      { "type": "string",  "__example__": "Chechia tunisienne bleue en laine - 58 cm" },
                 "p3_sku":       { "type": "string",  "__example__": "CHBLU58" },
                 "p3_qty_price": { "type": "string",  "__example__": "2 × 39.90 TND" },
@@ -322,4 +320,3 @@
         }
     ]
 }
-```
