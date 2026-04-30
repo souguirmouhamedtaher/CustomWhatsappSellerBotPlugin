@@ -1,0 +1,325 @@
+# WhatsApp Flow — Order Manager (v1.0.14)
+
+```json
+{
+    "version": "7.3",
+    "data_api_version": "3.0",
+    "routing_model": {
+        "WELCOME_SCREEN": ["ORDER_STATUS"],
+        "ORDER_STATUS": ["ORDER_LIST"],
+        "ORDER_LIST": ["ORDER_DETAIL"],
+        "ORDER_DETAIL": ["ORDER_ARTICLES", "SUCCESS"],
+        "ORDER_ARTICLES": ["SUCCESS"]
+    },
+    "screens": [
+        {
+            "id": "WELCOME_SCREEN",
+            "title": "Bienvenue",
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    { "type": "TextHeading", "text": "🛒 Gestionnaire de Commandes" },
+                    { "type": "TextBody", "text": "👋 Bonjour ! Cet outil vous permet de visualiser et de suivre toutes vos commandes en temps réel." },
+                    { "type": "TextSubheading", "text": "Ce que vous pouvez faire :" },
+                    { "type": "TextBody", "text": "• 📊 Consulter le résumé de vos commandes.\n• 🔍 Parcourir la liste de vos commandes.\n• 📦 Vérifier le statut de chaque commande.\n• 🧾 Consulter les détails complets d'une commande." },
+                    { "type": "TextCaption", "text": "Appuyez sur le bouton ci-dessous pour commencer. 👇" },
+                    {
+                        "type": "Footer",
+                        "label": "Voir mes commandes",
+                        "on-click-action": { "name": "data_exchange", "payload": { "cmd": "init" } }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "ORDER_STATUS",
+            "title": "Statut des Commandes",
+            "data": {
+                "error_msg": { "type": "string", "__example__": "" },
+                "statuses": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": { "id": { "type": "string" }, "title": { "type": "string" } }
+                    },
+                    "__example__": [
+                        { "id": "all",         "title": "🗂️ Toutes  —  16000" },
+                        { "id": "completed",   "title": "✅ Livrée  —  9998" },
+                        { "id": "in_delivery", "title": "🚚 En livraison  —  74" },
+                        { "id": "pending",     "title": "⏳ En traitement  —  71" },
+                        { "id": "cancelled",   "title": "❌ Annulée  —  5416" },
+                        { "id": "refunded",    "title": "↩️ Remboursée  —  52" },
+                        { "id": "anomaly",     "title": "⚠️ Anomalie  —  33" }
+                    ]
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    { "type": "TextBody", "text": "${data.error_msg}", "visible": "`${data.error_msg}!=''`" },
+                    {
+                        "type": "Form",
+                        "name": "status_form",
+                        "children": [
+                            {
+                                "type": "RadioButtonsGroup",
+                                "label": "Filtrer par statut",
+                                "name": "selected_status",
+                                "data-source": "${data.statuses}",
+                                "required": true
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Voir les commandes",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": { "status_filter": "${form.selected_status}", "cmd": "filter_orders" }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "ORDER_LIST",
+            "title": "Mes Commandes",
+            "data": {
+                "current_page": { "type": "number", "__example__": 1 },
+                "status_filter": { "type": "string", "__example__": "all" },
+                "orders": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": { "type": "string" },
+                            "main-content": {
+                                "type": "object",
+                                "properties": {
+                                    "title": { "type": "string" },
+                                    "description": { "type": "string" },
+                                    "metadata": { "type": "string" }
+                                }
+                            },
+                            "end": {
+                                "type": "object",
+                                "properties": { "title": { "type": "string" }, "metadata": { "type": "string" } }
+                            },
+                            "tags": { "type": "array", "items": { "type": "string" } }
+                        }
+                    },
+                    "__example__": [
+                        {
+                            "id": "3213",
+                            "main-content": { "title": "Commande #3213", "description": "Jean Pierre Mendy", "metadata": "04/03/2026 14:05 · 1 article" },
+                            "end": { "title": "12 000", "metadata": "XOF" },
+                            "tags": ["✅ Livrée"],
+                            "on-click-action": { "name": "data_exchange", "payload": { "order_id": "3213", "cmd": "order_details" } }
+                        },
+                        {
+                            "id": "8269",
+                            "main-content": { "title": "Commande #8269", "description": "Houaichi Bassem", "metadata": "03/03/2026 07:05 · 2 articles" },
+                            "end": { "title": "87.80", "metadata": "TND" },
+                            "tags": ["🚚 En livraison"],
+                            "on-click-action": { "name": "data_exchange", "payload": { "order_id": "8269", "cmd": "order_details" } }
+                        },
+                        {
+                            "id": "7741",
+                            "main-content": { "title": "Commande #7741", "description": "Sami Belhaj", "metadata": "01/03/2026 09:30 · 1 article" },
+                            "end": { "title": "45.00", "metadata": "TND" },
+                            "tags": ["⏳ En traitement"],
+                            "on-click-action": { "name": "data_exchange", "payload": { "order_id": "7741", "cmd": "order_details" } }
+                        },
+                        {
+                            "id": "6502",
+                            "main-content": { "title": "Commande #6502", "description": "Fatma Gharbi", "metadata": "28/02/2026 11:15 · 3 articles" },
+                            "end": { "title": "120.00", "metadata": "TND" },
+                            "tags": ["❌ Annulée"],
+                            "on-click-action": { "name": "data_exchange", "payload": { "order_id": "6502", "cmd": "order_details" } }
+                        },
+                        {
+                            "id": "5310",
+                            "main-content": { "title": "Commande #5310", "description": "Khaled Marzougui", "metadata": "25/02/2026 16:40 · 2 articles" },
+                            "end": { "title": "60.00", "metadata": "TND" },
+                            "tags": ["↩️ Remboursée"],
+                            "on-click-action": { "name": "data_exchange", "payload": { "order_id": "5310", "cmd": "order_details" } }
+                        },
+                        {
+                            "id": "4899",
+                            "main-content": { "title": "Commande #4899", "description": "Nadia Trabelsi", "metadata": "22/02/2026 08:20 · 1 article" },
+                            "end": { "title": "30.00", "metadata": "TND" },
+                            "tags": ["⚠️ Anomalie"],
+                            "on-click-action": { "name": "data_exchange", "payload": { "order_id": "4899", "cmd": "order_details" } }
+                        },
+                        {
+                            "id": "nav_next",
+                            "main-content": { "title": "Page Suivante ➡️", "metadata": "Page 1 / 5" },
+                            "on-click-action": { "name": "data_exchange", "payload": { "page": 2, "status_filter": "all", "cmd": "paginate" } },
+                            "end": { "title": "", "metadata": "" }
+                        }
+                    ]
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    { "type": "NavigationList", "name": "orders_nav", "list-items": "${data.orders}" }
+                ]
+            }
+        },
+        {
+            "id": "ORDER_DETAIL",
+            "title": "Détails Commande",
+            "data": {
+                "order_id":         { "type": "string", "__example__": "8269" },
+                "order_ref":        { "type": "string", "__example__": "Commande #8269" },
+                "order_date":       { "type": "string", "__example__": "3 mars 2026 à 07:05" },
+                "status":           { "type": "string", "__example__": "🚚 En livraison" },
+                "total":            { "type": "string", "__example__": "87.80 TND" },
+                "payment_method":   { "type": "string", "__example__": "Paiement à la livraison" },
+                "transaction_id":   { "type": "string", "__example__": "N/A" },
+                "customer_note":    { "type": "string", "__example__": "C 30028663275888" },
+                "articles_summary": { "type": "string", "__example__": "2 articles — 79.80 TND" },
+                "billing_info":     { "type": "string", "__example__": "Houaichi Bassem\nRue de la douane kalaat sinan 7130\n7130 Kalaat Sinan, TN\nEmail: 98544638@noemail.com\nTél: 98544638" },
+                "shipping_info":    { "type": "string", "__example__": "Houaichi Bassem\nRue de la douane kalaat sinan 7130\n7130 Kalaat Sinan, TN" },
+                "subtotal":         { "type": "string", "__example__": "79.80 TND" },
+                "shipping_cost":    { "type": "string", "__example__": "8.00 TND" },
+                "total_summary":    { "type": "string", "__example__": "87.80 TND" }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    { "type": "TextHeading",    "text": "${data.order_ref}" },
+                    { "type": "TextSubheading", "text": "Date :" },
+                    { "type": "TextBody",       "text": "${data.order_date}" },
+                    { "type": "TextSubheading", "text": "ℹ️ Informations générales" },
+                    { "type": "TextSubheading", "text": "Statut :" },
+                    { "type": "TextBody",       "text": "${data.status}" },
+                    { "type": "TextSubheading", "text": "Total :" },
+                    { "type": "TextBody",       "text": "${data.total}" },
+                    { "type": "TextSubheading", "text": "Méthode de paiement :" },
+                    { "type": "TextBody",       "text": "${data.payment_method}" },
+                    { "type": "TextSubheading", "text": "Transaction ID :" },
+                    { "type": "TextBody",       "text": "${data.transaction_id}" },
+                    { "type": "TextSubheading", "text": "Note client :" },
+                    { "type": "TextBody",       "text": "${data.customer_note}" },
+                    { "type": "TextSubheading", "text": "🛍️ Articles :" },
+                    { "type": "TextBody",       "text": "${data.articles_summary}" },
+                    {
+                        "type": "EmbeddedLink",
+                        "text": "🔍 Voir les articles de cette commande →",
+                        "on-click-action": { "name": "data_exchange", "payload": { "order_id": "${data.order_id}", "page": 1, "cmd": "load_articles" } }
+                    },
+                    { "type": "TextSubheading", "text": "🧾 Facturation :" },
+                    { "type": "TextBody",       "text": "${data.billing_info}" },
+                    { "type": "TextSubheading", "text": "🚚 Livraison :" },
+                    { "type": "TextBody",       "text": "${data.shipping_info}" },
+                    { "type": "TextSubheading", "text": "💰 Récapitulatif des totaux" },
+                    { "type": "TextSubheading", "text": "Sous-total :" },
+                    { "type": "TextBody",       "text": "${data.subtotal}" },
+                    { "type": "TextSubheading", "text": "Frais de livraison :" },
+                    { "type": "TextBody",       "text": "${data.shipping_cost}" },
+                    { "type": "TextSubheading", "text": "Total :" },
+                    { "type": "TextHeading",    "text": "${data.total_summary}" },
+                    {
+                        "type": "Footer",
+                        "label": "Fermer",
+                        "on-click-action": { "name": "data_exchange", "payload": { "confirm_action": true } }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "ORDER_ARTICLES",
+            "title": "Articles de la Commande",
+            "data": {
+                "order_id":   { "type": "string",  "__example__": "8269" },
+                "order_ref":  { "type": "string",  "__example__": "Commande #8269" },
+                "next_page":  { "type": "number",  "__example__": 2 },
+                "prev_page":  { "type": "number",  "__example__": 1 },
+                "has_next":   { "type": "boolean", "__example__": true },
+                "has_prev":   { "type": "boolean", "__example__": false },
+                "page_label": { "type": "string",  "__example__": "Page 1 / 2" },
+                "p1_img":       { "type": "string",  "__example__": "https://example.com/chechia-verte.jpg" },
+                "p1_name":      { "type": "string",  "__example__": "Chéchia Tunisienne Verte En Laine - 60 cm" },
+                "p1_sku":       { "type": "string",  "__example__": "CHVRT60" },
+                "p1_qty_price": { "type": "string",  "__example__": "1 × 39.90 TND" },
+                "p2_img":       { "type": "string",  "__example__": "https://example.com/chechia-rouge.jpg" },
+                "p2_name":      { "type": "string",  "__example__": "Chechia tunisienne rouge en laine - 60 cm" },
+                "p2_sku":       { "type": "string",  "__example__": "CHROU60" },
+                "p2_qty_price": { "type": "string",  "__example__": "1 × 39.90 TND" },
+                "p2_visible":   { "type": "boolean", "__example__": true },
+                "p3_img":       { "type": "string",  "__example__": "https://example.com/chechia-bleu.jpg" },
+                "p3_name":      { "type": "string",  "__example__": "Chechia tunisienne bleue en laine - 58 cm" },
+                "p3_sku":       { "type": "string",  "__example__": "CHBLU58" },
+                "p3_qty_price": { "type": "string",  "__example__": "2 × 39.90 TND" },
+                "p3_visible":   { "type": "boolean", "__example__": false }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    { "type": "TextHeading",    "text": "🛍️ Articles" },
+                    { "type": "TextSubheading", "text": "Commande :" },
+                    { "type": "TextBody",       "text": "${data.order_ref}" },
+                    { "type": "TextCaption",    "text": "${data.page_label}" },
+                    { "type": "Image", "src": "${data.p1_img}", "height": 120, "scale-type": "cover" },
+                    { "type": "TextSubheading", "text": "Produit :" },
+                    { "type": "TextBody",       "text": "${data.p1_name}" },
+                    { "type": "TextSubheading", "text": "SKU :" },
+                    { "type": "TextBody",       "text": "${data.p1_sku}" },
+                    { "type": "TextSubheading", "text": "Quantité × Prix :" },
+                    { "type": "TextBody",       "text": "${data.p1_qty_price}" },
+                    { "type": "Image", "src": "${data.p2_img}", "height": 120, "scale-type": "cover", "visible": "${data.p2_visible}" },
+                    { "type": "TextSubheading", "text": "Produit :",         "visible": "${data.p2_visible}" },
+                    { "type": "TextBody",       "text": "${data.p2_name}",   "visible": "${data.p2_visible}" },
+                    { "type": "TextSubheading", "text": "SKU :",             "visible": "${data.p2_visible}" },
+                    { "type": "TextBody",       "text": "${data.p2_sku}",    "visible": "${data.p2_visible}" },
+                    { "type": "TextSubheading", "text": "Quantité × Prix :", "visible": "${data.p2_visible}" },
+                    { "type": "TextBody",       "text": "${data.p2_qty_price}", "visible": "${data.p2_visible}" },
+                    { "type": "Image", "src": "${data.p3_img}", "height": 120, "scale-type": "cover", "visible": "${data.p3_visible}" },
+                    { "type": "TextSubheading", "text": "Produit :",         "visible": "${data.p3_visible}" },
+                    { "type": "TextBody",       "text": "${data.p3_name}",   "visible": "${data.p3_visible}" },
+                    { "type": "TextSubheading", "text": "SKU :",             "visible": "${data.p3_visible}" },
+                    { "type": "TextBody",       "text": "${data.p3_sku}",    "visible": "${data.p3_visible}" },
+                    { "type": "TextSubheading", "text": "Quantité × Prix :", "visible": "${data.p3_visible}" },
+                    { "type": "TextBody",       "text": "${data.p3_qty_price}", "visible": "${data.p3_visible}" },
+                    {
+                        "type": "EmbeddedLink",
+                        "text": "➡️ Page Suivante",
+                        "visible": "${data.has_next}",
+                        "on-click-action": { "name": "data_exchange", "payload": { "order_id": "${data.order_id}", "page": "${data.next_page}", "cmd": "load_articles" } }
+                    },
+                    {
+                        "type": "EmbeddedLink",
+                        "text": "⬅️ Page Précédente",
+                        "visible": "${data.has_prev}",
+                        "on-click-action": { "name": "data_exchange", "payload": { "order_id": "${data.order_id}", "page": "${data.prev_page}", "cmd": "load_articles" } }
+                    },
+                    {
+                        "type": "Footer",
+                        "label": "Fermer",
+                        "on-click-action": { "name": "data_exchange", "payload": { "confirm_action": true } }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "SUCCESS",
+            "title": "Terminé",
+            "terminal": true,
+            "data": { "message": { "type": "string", "__example__": "Action terminée avec succès !" } },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    { "type": "TextHeading", "text": "${data.message}" },
+                    {
+                        "type": "Footer",
+                        "label": "Fermer",
+                        "on-click-action": { "name": "complete", "payload": { "status": "success" } }
+                    }
+                ]
+            }
+        }
+    ]
+}
+```
