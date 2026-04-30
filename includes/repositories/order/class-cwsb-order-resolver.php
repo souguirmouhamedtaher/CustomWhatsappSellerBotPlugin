@@ -135,10 +135,13 @@ class CWSB_Order_Resolver
     public static function empty_order_counters()
     {
         return [
-            'total' => 0,
-            'completed' => 0,
+            'total'       => 0,
+            'completed'   => 0,
             'in_delivery' => 0,
-            'to_deliver' => 0,
+            'pending'     => 0,
+            'cancelled'   => 0,
+            'refunded'    => 0,
+            'anomaly'     => 0,
         ];
     }
 

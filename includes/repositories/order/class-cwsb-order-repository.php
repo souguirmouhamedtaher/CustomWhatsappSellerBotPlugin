@@ -100,7 +100,7 @@ class CWSB_Order_Repository
             $status = CWSB_Order_Mapper::map_order_status($raw_status);
             $counters['total'] += $count;
             if (!isset($counters[$status])) {
-                $status = 'to_deliver';
+                $status = 'pending';
             }
             $counters[$status] += $count;
         }

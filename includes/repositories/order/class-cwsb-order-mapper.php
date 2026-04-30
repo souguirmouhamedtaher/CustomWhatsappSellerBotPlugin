@@ -177,8 +177,20 @@ class CWSB_Order_Mapper
             return 'in_delivery';
         }
 
-        if ($filter === 'to_deliver') {
-            return 'to_deliver';
+        if ($filter === 'pending') {
+            return 'pending';
+        }
+
+        if ($filter === 'cancelled') {
+            return 'cancelled';
+        }
+
+        if ($filter === 'refunded') {
+            return 'refunded';
+        }
+
+        if ($filter === 'anomaly') {
+            return 'anomaly';
         }
 
         return 'all';
@@ -204,15 +216,31 @@ class CWSB_Order_Mapper
         $value = strtolower(CWSB_Utils::normalize_text($status));
         $value = preg_replace('/^wc-/', '', $value);
 
-        if ($value === 'completed') {
+        if ($value === 'completed' || $value === 'commande-livree') {
             return 'completed';
         }
 
-        if ($value === 'in_delivery' || $value === 'in-delivery' || $value === 'shipped') {
+        if ($value === 'en-cours-de-livra') {
             return 'in_delivery';
         }
 
-        return 'to_deliver';
+        if (in_array($value, ['processing', 'on-hold', 'a-livrer', 'vendeur-va-fabriq', 'a-creer-le-bordea', 'paye-par-mobile-m'], true)) {
+            return 'pending';
+        }
+
+        if (in_array($value, ['cancelled', 'colis-refuse', 'colis-refuse-clot'], true)) {
+            return 'cancelled';
+        }
+
+        if ($value === 'refunded') {
+            return 'refunded';
+        }
+
+        if (in_array($value, ['anomalie-de-pick', 'anomalie-de-livra', 'vendeur-injoignab', 'acheteur-injoigna', 'vendeur-nas-pas-l'], true)) {
+            return 'anomaly';
+        }
+
+        return 'pending';
     }
 
     /**
@@ -221,14 +249,30 @@ class CWSB_Order_Mapper
     public static function map_order_status_label($status)
     {
         if ($status === 'completed') {
-            return 'Livree';
+            return '✅ Livrée';
         }
 
         if ($status === 'in_delivery') {
-            return 'En livraison';
+            return '🚚 En livraison';
         }
 
-        return 'A livrer';
+        if ($status === 'pending') {
+            return '⏳ En traitement';
+        }
+
+        if ($status === 'cancelled') {
+            return '❌ Annulée';
+        }
+
+        if ($status === 'refunded') {
+            return '↩️ Remboursée';
+        }
+
+        if ($status === 'anomaly') {
+            return '⚠️ Anomalie';
+        }
+
+        return '⏳ En traitement';
     }
 
     /**

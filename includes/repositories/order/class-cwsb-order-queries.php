@@ -136,15 +136,27 @@ class CWSB_Order_Queries
         $filter = strtolower(trim((string) $status_filter));
 
         if ($filter === 'completed') {
-            return "AND o.post_status IN ('wc-completed')";
+            return "AND o.post_status IN ('wc-completed','wc-commande-livree')";
         }
 
         if ($filter === 'in_delivery' || $filter === 'in-delivery') {
-            return "AND o.post_status IN ('wc-shipped', 'wc-in-delivery')";
+            return "AND o.post_status IN ('wc-en-cours-de-livra')";
         }
 
-        if ($filter === 'to_deliver') {
-            return "AND o.post_status NOT IN ('wc-completed', 'wc-shipped', 'wc-in-delivery')";
+        if ($filter === 'pending') {
+            return "AND o.post_status IN ('wc-processing','wc-on-hold','wc-a-livrer','wc-vendeur-va-fabriq','wc-a-creer-le-bordea','wc-paye-par-mobile-m')";
+        }
+
+        if ($filter === 'cancelled') {
+            return "AND o.post_status IN ('wc-cancelled','wc-colis-refuse','wc-colis-refuse-clot')";
+        }
+
+        if ($filter === 'refunded') {
+            return "AND o.post_status IN ('wc-refunded')";
+        }
+
+        if ($filter === 'anomaly') {
+            return "AND o.post_status IN ('wc-anomalie-de-pick','wc-anomalie-de-livra','wc-vendeur-injoignab','wc-acheteur-injoigna','wc-vendeur-nas-pas-l')";
         }
 
         return ''; // 'all' or unknown filter
