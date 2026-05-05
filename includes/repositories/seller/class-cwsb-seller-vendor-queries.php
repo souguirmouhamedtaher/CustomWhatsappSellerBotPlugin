@@ -18,6 +18,27 @@ class CWSB_Seller_Vendor_Queries
         return '%"wcfm_vendor"%';
     }
 
+    public static function check_user_is_vendor($user_id)
+    {
+        global $wpdb;
+
+        $cap_key = $wpdb->prefix . 'capabilities';
+        $sql = "
+            SELECT 1
+            FROM {$wpdb->usermeta}
+            WHERE user_id = %d
+              AND meta_key = %s
+              AND meta_value LIKE %s
+            LIMIT 1
+        ";
+
+        $result = $wpdb->get_var(
+            $wpdb->prepare($sql, (int) $user_id, $cap_key, self::vendor_capability_like())
+        );
+
+        return $result !== null;
+    }
+
     public static function find_vendor_row_by_phone_exact($refs)
     {
         global $wpdb;

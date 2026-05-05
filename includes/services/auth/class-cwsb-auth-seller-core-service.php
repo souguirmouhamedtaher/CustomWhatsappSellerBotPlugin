@@ -67,8 +67,15 @@ class CWSB_Auth_Seller_Core_Service
         $phone = (string) $request->get_param('phone');
         $seller = CWSB_Seller_Repository::find_state_seller_by_phone($phone);
 
+        if ($seller && !empty($seller['user_id'])) {
+            $vendor_exists = CWSB_Seller_Vendor_Queries::check_user_is_vendor((int) $seller['user_id']);
+        } else {
+            $vendor_exists = false;
+        }
+
         return CWSB_Response::ok([
-            'seller' => $seller ?: null,
+            'seller'        => $seller ?: null,
+            'vendor_exists' => $vendor_exists,
         ]);
     }
 
