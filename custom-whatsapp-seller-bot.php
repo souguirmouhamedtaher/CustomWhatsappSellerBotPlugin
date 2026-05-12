@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom WhatsApp Seller Bot
 Description: Seller lookup endpoints for WhatsApp bot.
-Version: 1.0.15
+Version: 1.0.16
 Author: ILEYCOM-INTERNSHIPS
 */
 

@@ -275,7 +275,7 @@ class CWSB_Seller_Vendor_Queries
                     FROM {$wpdb->posts} prod
                     WHERE prod.post_author = u.ID
                       AND prod.post_type   = 'product'
-                      AND prod.post_status IN ('publish', 'private')
+                      AND prod.post_status IN ('publish', 'private', 'draft', 'pending')
                 ) AS product_count,
                 (
                     SELECT COUNT(1)
@@ -337,7 +337,7 @@ class CWSB_Seller_Vendor_Queries
                     FROM {$wpdb->posts} prod
                     WHERE prod.post_author = u.ID
                       AND prod.post_type   = 'product'
-                      AND prod.post_status IN ('publish', 'private')
+                      AND prod.post_status IN ('publish', 'private', 'draft', 'pending')
                 ) AS product_count,
                 (
                     SELECT COUNT(1)
@@ -425,7 +425,7 @@ class CWSB_Seller_Vendor_Queries
                     FROM {$wpdb->posts} prod
                     WHERE prod.post_author = u.ID
                       AND prod.post_type   = 'product'
-                      AND prod.post_status IN ('publish', 'private')
+                      AND prod.post_status IN ('publish', 'private', 'draft', 'pending')
                 ) AS product_count,
                 (
                     SELECT COUNT(1)
