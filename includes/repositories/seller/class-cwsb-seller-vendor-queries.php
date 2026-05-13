@@ -278,7 +278,7 @@ class CWSB_Seller_Vendor_Queries
                       AND prod.post_status IN ('publish', 'private', 'draft', 'pending')
                 ) AS product_count,
                 (
-                    SELECT COUNT(1)
+                    SELECT COUNT(DISTINCT wo.order_id)
                     FROM {$orders_table} wo
                     WHERE wo.vendor_id = u.ID
                 ) AS order_count
@@ -340,7 +340,7 @@ class CWSB_Seller_Vendor_Queries
                       AND prod.post_status IN ('publish', 'private', 'draft', 'pending')
                 ) AS product_count,
                 (
-                    SELECT COUNT(1)
+                    SELECT COUNT(DISTINCT wo.order_id)
                     FROM {$orders_table} wo
                     WHERE wo.vendor_id = u.ID
                 ) AS order_count
@@ -428,7 +428,7 @@ class CWSB_Seller_Vendor_Queries
                       AND prod.post_status IN ('publish', 'private', 'draft', 'pending')
                 ) AS product_count,
                 (
-                    SELECT COUNT(1)
+                    SELECT COUNT(DISTINCT wo.order_id)
                     FROM {$orders_table} wo
                     WHERE wo.vendor_id = u.ID
                 ) AS order_count
