@@ -33,10 +33,6 @@ class CWSB_Product_Repository
     const DEFAULT_PRODUCTS_LIMIT = 200;
     const MAX_CAROUSEL_IMAGES = 3;
 
-    public static function invalidate_cached_lists_for_seller_refs($seller_user_id = 0, $phones = [], $flow_tokens = [])
-    {
-    }
-
     public static function find_products_by_seller_phone($phone)
     {
         $seller_user_id = CWSB_Product_Resolver::find_state_user_id_by_phone($phone);

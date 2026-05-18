@@ -265,17 +265,6 @@ class CWSB_Update_Product_Writer
             }
         }
 
-        if (class_exists('CWSB_Product_Repository') && class_exists('CWSB_Seller_Read_Repository')) {
-            $vendor = CWSB_Seller_Read_Repository::find_vendor_by_user_id($seller_user_id);
-            if ($vendor) {
-                CWSB_Product_Repository::invalidate_cached_lists_for_seller_refs(
-                    $seller_user_id,
-                    [isset($vendor['phone']) ? $vendor['phone'] : ''],
-                    [isset($vendor['flow_token']) ? $vendor['flow_token'] : '']
-                );
-            }
-        }
-
         return true;
     }
 

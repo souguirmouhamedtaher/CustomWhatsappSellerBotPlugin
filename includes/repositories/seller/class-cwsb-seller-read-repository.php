@@ -23,21 +23,6 @@ if (!class_exists('CWSB_Seller_Read_Normalizer')) {
  */
 class CWSB_Seller_Read_Repository
 {
-    public static function seller_user_cache_key($user_id)
-    {
-        return 'seller:user:' . (int) $user_id;
-    }
-
-    public static function seller_phone_cache_key($phone)
-    {
-        return 'seller:phone:' . CWSB_Utils::normalize_phone($phone);
-    }
-
-    public static function seller_flow_cache_key($flow_token)
-    {
-        return 'seller:flow:' . CWSB_Utils::normalize_text($flow_token);
-    }
-
     public static function vendor_capability_like()
     {
         return CWSB_Seller_Read_Queries::vendor_capability_like();

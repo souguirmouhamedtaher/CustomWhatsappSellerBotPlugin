@@ -12,10 +12,6 @@ if (!class_exists('CWSB_Seller_Read_Repository')) {
     require_once __DIR__ . '/class-cwsb-seller-read-repository.php';
 }
 
-if (!class_exists('CWSB_Seller_State_Cache_Invalidator')) {
-    require_once __DIR__ . '/class-cwsb-seller-state-cache-invalidator.php';
-}
-
 /**
  * Write/update side of seller repository.
  */
@@ -91,7 +87,6 @@ class CWSB_Seller_State_Writer
                 $flows_to_invalidate[] = $data['flow_token'];
             }
 
-            CWSB_Seller_State_Cache_Invalidator::invalidate_seller_read_caches($user_id, $phones_to_invalidate, $flows_to_invalidate);
             return true;
         }
 
@@ -146,7 +141,6 @@ class CWSB_Seller_State_Writer
             $flows_to_invalidate[] = $data['flow_token'];
         }
 
-        CWSB_Seller_State_Cache_Invalidator::invalidate_seller_read_caches($user_id, $phones_to_invalidate, $flows_to_invalidate);
         return true;
     }
 
@@ -178,12 +172,6 @@ class CWSB_Seller_State_Writer
                 if (!empty($updates)) {
                     $wpdb->update($table, $updates, ['user_id' => $user_id]);
                 }
-
-                CWSB_Seller_State_Cache_Invalidator::invalidate_seller_read_caches(
-                    $user_id,
-                    [$normalized_phone],
-                    [isset($updates['flow_token']) ? $updates['flow_token'] : '']
-                );
 
                 return CWSB_Seller_Read_Repository::find_state_seller_by_phone($normalized_phone);
             }
@@ -239,7 +227,6 @@ class CWSB_Seller_State_Writer
                 isset($updates['flow_token']) ? $updates['flow_token'] : '',
             ];
 
-            CWSB_Seller_State_Cache_Invalidator::invalidate_seller_read_caches($user_id, $phones_to_invalidate, $flows_to_invalidate);
             return CWSB_Seller_Read_Repository::find_state_seller_by_phone($normalized_phone);
         }
 
@@ -342,8 +329,6 @@ class CWSB_Seller_State_Writer
             error_log('[CWSB] set_reset_token_by_email: update failed for uid=' . $uid . ' wpdb_err=' . $wpdb->last_error);
             return null;
         }
-
-        CWSB_Seller_State_Cache_Invalidator::invalidate_seller_read_caches($uid, [], []);
 
         return CWSB_Seller_Read_Repository::find_state_seller_by_email($mail);
     }
