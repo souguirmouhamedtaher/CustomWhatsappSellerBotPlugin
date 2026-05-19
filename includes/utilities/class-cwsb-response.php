@@ -126,17 +126,23 @@ class CWSB_Response
     /**
      * Builds a success response.
      */
-    public static function ok($data = [], $status = 200)
+    public static function ok($data = [], $status = 200, $meta = [])
     {
         CWSB_Logger::info('API success response', array_merge(self::requestMeta(), [
             'status' => (int) $status,
             'data' => self::dataSummary($data),
         ]));
 
-        return self::withUtf8Headers([
+        $payload = [
             'success' => true,
             'data' => $data,
-        ], (int) $status);
+        ];
+
+        if (is_array($meta) && !empty($meta)) {
+            $payload['meta'] = $meta;
+        }
+
+        return self::withUtf8Headers($payload, (int) $status);
     }
 
     /**

@@ -37,6 +37,10 @@ class CWSB_Seller_State_Writer
             'reset_token_expiry',
             'session_active_until',
             'auth_portal_sent_at',
+            'seller_status',
+            'blocked_reason',
+            'blocked_at',
+            'blocked_by',
         ];
 
         $data = [];
@@ -60,7 +64,7 @@ class CWSB_Seller_State_Writer
             $wpdb->prepare("SELECT user_id FROM {$table} WHERE user_id = %d LIMIT 1", $user_id)
         );
 
-        $bigint_fields = ['reset_token_expiry', 'session_active_until', 'auth_portal_sent_at'];
+        $bigint_fields = ['reset_token_expiry', 'session_active_until', 'auth_portal_sent_at', 'blocked_at'];
         $data_formats = [];
         foreach (array_keys($data) as $k) {
             $data_formats[] = in_array($k, $bigint_fields, true) ? '%d' : '%s';
@@ -159,7 +163,7 @@ class CWSB_Seller_State_Writer
             if ($user_id > 0) {
                 $table = CWSB_Seller_Read_Repository::state_table_name();
                 $updates = [];
-                foreach (['flow_token', 'code', 'reset_token', 'reset_token_expiry', 'session_active_until', 'auth_portal_sent_at'] as $key) {
+                foreach (['flow_token', 'code', 'reset_token', 'reset_token_expiry', 'session_active_until', 'auth_portal_sent_at', 'seller_status', 'blocked_reason', 'blocked_at', 'blocked_by'] as $key) {
                     if (array_key_exists($key, (array) $state)) {
                         $updates[$key] = $state[$key];
                     }

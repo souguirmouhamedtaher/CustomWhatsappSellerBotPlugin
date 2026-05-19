@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom WhatsApp Seller Bot
 Description: Seller lookup endpoints for WhatsApp bot.
-Version: 1.0.17
+Version: 1.0.18
 Author: ILEYCOM-INTERNSHIPS
 */
 
@@ -80,6 +80,10 @@ function cwsb_create_tables()
         reset_token_expiry BIGINT(20) NULL,
         session_active_until BIGINT(20) NULL,
         auth_portal_sent_at BIGINT(20) NULL,
+        seller_status VARCHAR(20) NOT NULL DEFAULT 'active',
+        blocked_reason TEXT NULL,
+        blocked_at BIGINT(20) NULL,
+        blocked_by VARCHAR(255) NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY  (id),
@@ -89,10 +93,13 @@ function cwsb_create_tables()
         KEY flow_token (flow_token),
         KEY reset_token (reset_token),
         KEY session_active_until (session_active_until),
-        KEY auth_portal_sent_at (auth_portal_sent_at)
+        KEY auth_portal_sent_at (auth_portal_sent_at),
+        KEY seller_status (seller_status),
+        KEY blocked_at (blocked_at)
     ) {$charset_collate};";
 
     dbDelta($sql);
+
 }
 
 /**
@@ -152,6 +159,44 @@ function cwsb_upgrade_schema_if_needed()
         $wpdb->query("ALTER TABLE {$table_name} ADD KEY auth_portal_sent_at (auth_portal_sent_at)");
     }
 
+    $seller_status_col = $wpdb->get_var("SHOW COLUMNS FROM {$table_name} LIKE 'seller_status'");
+    $status_col = $wpdb->get_var("SHOW COLUMNS FROM {$table_name} LIKE 'status'");
+    $admin_status_col = $wpdb->get_var("SHOW COLUMNS FROM {$table_name} LIKE 'admin_status'");
+    if (!$seller_status_col) {
+        if ($status_col) {
+            $wpdb->query("ALTER TABLE {$table_name} CHANGE status seller_status VARCHAR(20) NOT NULL DEFAULT 'active'");
+        } elseif ($admin_status_col) {
+            $wpdb->query("ALTER TABLE {$table_name} CHANGE admin_status seller_status VARCHAR(20) NOT NULL DEFAULT 'active'");
+        } else {
+            $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN seller_status VARCHAR(20) NOT NULL DEFAULT 'active' AFTER auth_portal_sent_at");
+        }
+    }
+
+    $blocked_reason_col = $wpdb->get_var("SHOW COLUMNS FROM {$table_name} LIKE 'blocked_reason'");
+    if (!$blocked_reason_col) {
+        $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN blocked_reason TEXT NULL AFTER seller_status");
+    }
+
+    $blocked_at_col = $wpdb->get_var("SHOW COLUMNS FROM {$table_name} LIKE 'blocked_at'");
+    if (!$blocked_at_col) {
+        $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN blocked_at BIGINT(20) NULL AFTER blocked_reason");
+    }
+
+    $blocked_by_col = $wpdb->get_var("SHOW COLUMNS FROM {$table_name} LIKE 'blocked_by'");
+    if (!$blocked_by_col) {
+        $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN blocked_by VARCHAR(255) NULL AFTER blocked_at");
+    }
+
+    $seller_status_idx = $wpdb->get_var("SHOW INDEX FROM {$table_name} WHERE Key_name = 'seller_status'");
+    if (!$seller_status_idx) {
+        $wpdb->query("ALTER TABLE {$table_name} ADD KEY seller_status (seller_status)");
+    }
+
+    $blocked_at_idx = $wpdb->get_var("SHOW INDEX FROM {$table_name} WHERE Key_name = 'blocked_at'");
+    if (!$blocked_at_idx) {
+        $wpdb->query("ALTER TABLE {$table_name} ADD KEY blocked_at (blocked_at)");
+    }
+
     $reset_token_col = $wpdb->get_var("SHOW COLUMNS FROM {$table_name} LIKE 'reset_token'");
     if (!$reset_token_col) {
         $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN reset_token VARCHAR(255) NULL AFTER code");
@@ -166,6 +211,7 @@ function cwsb_upgrade_schema_if_needed()
     if (!$reset_token_idx) {
         $wpdb->query("ALTER TABLE {$table_name} ADD KEY reset_token (reset_token)");
     }
+
 }
 
 /**
@@ -180,11 +226,13 @@ function cwsb_register_rest_routes()
     require_once CWSB_PLUGIN_DIR . 'includes/controllers/add-product/class-cwsb-add-product-controller.php';
     require_once CWSB_PLUGIN_DIR . 'includes/controllers/update-product/class-cwsb-update-product-controller.php';
     require_once CWSB_PLUGIN_DIR . 'includes/controllers/dashboard/class-cwsb-dashboard-controller.php';
+    require_once CWSB_PLUGIN_DIR . 'includes/controllers/admin/class-cwsb-admin-controller.php';
 
     CWSB_Auth_Controller::register_routes();
     CWSB_Add_Product_Controller::register_routes();
     CWSB_Update_Product_Controller::register_routes();
     CWSB_Dashboard_Controller::register_routes();
+    CWSB_Admin_Controller::register_routes();
 }
 
 /**

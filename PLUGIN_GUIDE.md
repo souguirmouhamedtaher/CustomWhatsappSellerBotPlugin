@@ -61,15 +61,15 @@ WordPress discovers plugins by scanning plugin files for a header comment block.
 
 ```php
 /*
--> REST route registration
--> permission callback
--> dashboard service
--> seller repository facade
--> read repository
--> SQL query layer
--> normalizer
--> CWSB_Response::ok()
--> JSON response
+Plugin Name: Custom WhatsApp Seller Bot
+Description: Seller lookup endpoints for WhatsApp bot.
+Version: 1.0.17
+Author: ILEYCOM-INTERNSHIPS
+*/
+```
+
+WordPress reads that header to determine:
+
 - the plugin's display name in the admin UI
 - the installed version
 - author information

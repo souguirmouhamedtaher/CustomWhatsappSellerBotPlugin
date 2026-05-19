@@ -70,4 +70,38 @@ class CWSB_Auth_Middleware
 
         return true;
     }
+
+    /**
+     * Validates x-admin-actor header (required admin email identifier).
+     *
+     * @return true|WP_Error
+     */
+    public static function require_admin_actor(WP_REST_Request $request)
+    {
+        $actor = trim((string) $request->get_header('x-admin-actor'));
+        if ($actor === '') {
+            return new WP_Error('cwsb_admin_actor_required', 'x-admin-actor header is required.', ['status' => 422]);
+        }
+
+        if (!is_email($actor)) {
+            return new WP_Error('cwsb_admin_actor_invalid', 'x-admin-actor must be a valid email.', ['status' => 422]);
+        }
+
+        return true;
+    }
+
+    /**
+     * Combined permission callback for admin endpoints.
+     *
+     * @return true|WP_Error
+     */
+    public static function require_api_key_and_admin_actor(WP_REST_Request $request)
+    {
+        $api_check = self::require_api_key($request);
+        if ($api_check !== true) {
+            return $api_check;
+        }
+
+        return self::require_admin_actor($request);
+    }
 }
