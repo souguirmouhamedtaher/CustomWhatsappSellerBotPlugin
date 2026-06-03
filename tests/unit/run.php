@@ -41,6 +41,38 @@ require_once __DIR__ . '/../../includes/utilities/class-cwsb-logger.php';
 require_once __DIR__ . '/../../includes/utilities/class-cwsb-utils.php';
 require_once __DIR__ . '/../../includes/services/add-product/class-cwsb-add-product-support-service.php';
 
+if (!function_exists('wmc_get_price')) {
+    function wmc_get_price($value = null)
+    {
+        return $value;
+    }
+}
+
+if (!function_exists('wmc_get_exchange_rate')) {
+    function wmc_get_exchange_rate($currency_code)
+    {
+        return $currency_code === 'EUR' ? 1 : 250;
+    }
+}
+
+if (!class_exists('WOOMULTI_CURRENCY_Data')) {
+    class WOOMULTI_CURRENCY_Data
+    {
+        public static function get_ins()
+        {
+            return new class {
+                public function get_list_currencies()
+                {
+                    return [
+                        'EUR' => ['rate' => 1],
+                        'XOS' => ['rate' => 250],
+                    ];
+                }
+            };
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // 2. Micro test framework
 // ---------------------------------------------------------------------------
@@ -313,6 +345,70 @@ run_test('convert_tnd_to_eur: rounding_decimals does not change integer result',
     $b = CWSB_Add_Product_Support_Service::convert_tnd_to_eur(100, array_merge($base, ['rounding_decimals' => 4]));
 
     assert_equals($a, $b, 'decimals ignored for threshold integer rounding');
+});
+
+// --- convert_eur_to_xos (math core) -----------------------------------------
+
+run_test('convert_eur_to_xos: formula = (eur * rate) + markup, threshold integer', function () {
+    $config = ['exchange_rate' => 250, 'fixed_markup_xos' => 3.0, 'rounding_decimals' => 2];
+
+    $expected = round_threshold_to_int_expected((100 * 250) + 3, 0.2);
+    assert_nearly_equals($expected, CWSB_Add_Product_Support_Service::convert_eur_to_xos(100, $config), '100 EUR');
+
+    $expected50 = round_threshold_to_int_expected((50 * 250) + 3, 0.2);
+    assert_nearly_equals($expected50, CWSB_Add_Product_Support_Service::convert_eur_to_xos(50, $config), '50 EUR');
+
+    $config_no_markup = ['exchange_rate' => 250, 'fixed_markup_xos' => 0, 'rounding_decimals' => 4];
+    $expected_no_markup = round_threshold_to_int_expected(100 * 250, 0.2);
+    assert_nearly_equals(
+        $expected_no_markup,
+        CWSB_Add_Product_Support_Service::convert_eur_to_xos(100, $config_no_markup),
+        'no markup',
+        0.0001
+    );
+});
+
+run_test('convert_eur_to_xos: defaults when config omitted', function () {
+    $expected = round_threshold_to_int_expected((100 * 1) + 0, 0.2);
+    assert_nearly_equals($expected, CWSB_Add_Product_Support_Service::convert_eur_to_xos(100), 'default config');
+});
+
+run_test('convert_eur_to_xos: zero/negative input returns 0', function () {
+    assert_nearly_equals(0, CWSB_Add_Product_Support_Service::convert_eur_to_xos(0),    'zero');
+    assert_nearly_equals(0, CWSB_Add_Product_Support_Service::convert_eur_to_xos(-10),  'negative');
+    assert_nearly_equals(0, CWSB_Add_Product_Support_Service::convert_eur_to_xos('abc'),'alpha');
+    assert_nearly_equals(0, CWSB_Add_Product_Support_Service::convert_eur_to_xos(null), 'null');
+});
+
+run_test('convert_eur_to_xos: invalid rate falls back to 1', function () {
+    $config_zero_rate = ['exchange_rate' => 0, 'fixed_markup_xos' => 3, 'rounding_decimals' => 2];
+    $expected = round_threshold_to_int_expected((100 * 1) + 3, 0.2);
+    assert_nearly_equals($expected, CWSB_Add_Product_Support_Service::convert_eur_to_xos(100, $config_zero_rate), 'rate=0 falls back');
+});
+
+run_test('convert_eur_to_xos: threshold boundary behavior at 0.2', function () {
+    $config = ['exchange_rate' => 1, 'fixed_markup_xos' => 0, 'rounding_decimals' => 2];
+
+    assert_equals(14, CWSB_Add_Product_Support_Service::convert_eur_to_xos(14.0646, $config), '< 14.2');
+    assert_equals(15, CWSB_Add_Product_Support_Service::convert_eur_to_xos(14.21321, $config), '>= 14.2');
+    assert_equals(15, CWSB_Add_Product_Support_Service::convert_eur_to_xos(14.564, $config), '>= 14.2 high frac');
+});
+
+run_test('convert_eur_to_xos: rounding_decimals does not change integer result', function () {
+    $base = ['exchange_rate' => 250, 'fixed_markup_xos' => 3];
+    $a = CWSB_Add_Product_Support_Service::convert_eur_to_xos(100, array_merge($base, ['rounding_decimals' => 0]));
+    $b = CWSB_Add_Product_Support_Service::convert_eur_to_xos(100, array_merge($base, ['rounding_decimals' => 4]));
+
+    assert_equals($a, $b, 'decimals ignored for threshold integer rounding');
+});
+
+run_test('convert_eur_to_xos_live: live rate conversion returns xos values', function () {
+    $config = ['fixed_markup_xos' => 2, 'exchange_rate' => 250, 'rounding_decimals' => 2];
+    $result = CWSB_Add_Product_Support_Service::convert_eur_to_xos_live(10, 5, $config);
+
+    assert_equals(2502, $result['regular_xos'] ?? null, 'regular xos');
+    assert_equals(1252, $result['promo_xos'] ?? null, 'promo xos');
+    assert_nearly_equals(250, $result['rate'] ?? 0, 'rate');
 });
 
 // --- validate_create_payload ------------------------------------------------

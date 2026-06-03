@@ -64,6 +64,16 @@ class CWSB_Add_Product_Actions_Service
             ],
         ]);
 
+        register_rest_route(CWSB_NS, '/seller/pricing/convert-eur-xos', [
+            'methods' => 'POST',
+            'callback' => [self::class, 'convert_eur_to_xos_prices'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args' => [
+                'regular_eur' => ['required' => false],
+                'promo_eur' => ['required' => false],
+            ],
+        ]);
+
         register_rest_route(CWSB_NS, '/seller/product/create/by-flow-token', [
             'methods' => 'POST',
             'callback' => [self::class, 'create_product_by_flow_token'],
@@ -195,6 +205,43 @@ class CWSB_Add_Product_Actions_Service
 
         $live = CWSB_Add_Product_Support_Service::convert_tnd_to_eur_live($regular_tnd, $promo_tnd, $config);
 
+
+    public static function convert_eur_to_xos_prices(WP_REST_Request $request)
+    {
+        $regular_eur = CWSB_Add_Product_Support_Service::to_positive_float($request->get_param('regular_eur'));
+        $promo_eur = CWSB_Add_Product_Support_Service::to_positive_float($request->get_param('promo_eur'));
+        $config = CWSB_Add_Product_Support_Service::get_xos_pricing_config();
+
+        $live = CWSB_Add_Product_Support_Service::convert_eur_to_xos_live($regular_eur, $promo_eur, $config);
+
+        if ($live !== null) {
+            return CWSB_Response::ok([
+                'regular_xos' => $live['regular_xos'],
+                'promo_xos' => $live['promo_xos'],
+                'config' => array_merge($config, [
+                    'provider' => 'woocommerce-multi-currency',
+                    'rounding_mode' => 'threshold_integer',
+                    'rounding_threshold' => 0.2,
+                    'live_rate' => isset($live['rate']) ? (float) $live['rate'] : 0,
+                    'target_currency' => 'XOS',
+                ]),
+            ]);
+        }
+
+        $regular_xos = CWSB_Add_Product_Support_Service::convert_eur_to_xos($regular_eur, $config);
+        $promo_xos = CWSB_Add_Product_Support_Service::convert_eur_to_xos($promo_eur, $config);
+
+        return CWSB_Response::ok([
+            'regular_xos' => $regular_xos,
+            'promo_xos' => $promo_xos,
+            'config' => array_merge($config, [
+                'provider' => 'local-fallback',
+                'rounding_mode' => 'threshold_integer',
+                'rounding_threshold' => 0.2,
+                'target_currency' => 'XOS',
+            ]),
+        ]);
+    }
         if ($live !== null) {
             return CWSB_Response::ok([
                 'regular_eur' => $live['regular_eur'],

@@ -1,6 +1,6 @@
 # Custom WhatsApp Seller Bot Plugin Guide
 
-Version reference: `1.0.17`
+Version reference: `1.0.19`
 
 ---
 

@@ -123,6 +123,24 @@ class CWSB_Add_Product_Support_Service
         ];
     }
 
+    public static function get_xos_pricing_config()
+    {
+        $exchange_rate = (float) get_option('cwsb_xos_exchange_rate', 1);
+        if ($exchange_rate <= 0) {
+            $exchange_rate = 1;
+        }
+
+        $fixed_markup = (float) get_option('cwsb_xos_fixed_markup', 0);
+        $rounding_decimals = (int) get_option('cwsb_xos_rounding_decimals', 2);
+        $rounding_decimals = max(0, min($rounding_decimals, 4));
+
+        return [
+            'exchange_rate' => $exchange_rate,
+            'fixed_markup_xos' => $fixed_markup,
+            'rounding_decimals' => $rounding_decimals,
+        ];
+    }
+
     public static function convert_tnd_to_eur($tnd, $config = [])
     {
         $safe_tnd = self::to_positive_float($tnd);
@@ -216,6 +234,99 @@ class CWSB_Add_Product_Support_Service
             ];
         } catch (Throwable $e) {
             CWSB_Logger::error('convert_tnd_to_eur_live threw exception', ['message' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    public static function convert_eur_to_xos($eur, $config = [])
+    {
+        $safe_eur = self::to_positive_float($eur);
+        if ($safe_eur <= 0) {
+            return 0;
+        }
+
+        $exchange_rate = isset($config['exchange_rate']) ? (float) $config['exchange_rate'] : 1;
+        $fixed_markup = isset($config['fixed_markup_xos']) ? (float) $config['fixed_markup_xos'] : 0;
+        $rounding_decimals = isset($config['rounding_decimals']) ? (int) $config['rounding_decimals'] : 2;
+
+        if ($exchange_rate <= 0) {
+            $exchange_rate = 1;
+        }
+
+        $rounding_decimals = max(0, min($rounding_decimals, 4));
+        $xos = ($safe_eur * $exchange_rate) + $fixed_markup;
+        $result = self::round_with_threshold_to_int($xos, 0.2);
+
+        CWSB_Logger::debug('convert_eur_to_xos', [
+            'eur' => $safe_eur,
+            'rate' => $exchange_rate,
+            'markup' => $fixed_markup,
+            'decimals' => $rounding_decimals,
+            'rounding_mode' => 'threshold_integer',
+            'rounding_threshold' => 0.2,
+            'xos' => $result,
+        ]);
+
+        return $result;
+    }
+
+    public static function convert_eur_to_xos_live($regular_eur, $promo_eur, $config = [])
+    {
+        if (!function_exists('wmc_get_price')) {
+            return null;
+        }
+
+        if (!class_exists('WOOMULTI_CURRENCY_Data')) {
+            return null;
+        }
+
+        try {
+            $settings = WOOMULTI_CURRENCY_Data::get_ins();
+            if (!$settings || !method_exists($settings, 'get_list_currencies')) {
+                return null;
+            }
+
+            $currencies = $settings->get_list_currencies();
+            if (!is_array($currencies) || !isset($currencies['EUR'], $currencies['XOS'])) {
+                return null;
+            }
+
+            $rate_eur = isset($currencies['EUR']['rate']) ? (float) $currencies['EUR']['rate'] : 0;
+            $rate_xos = isset($currencies['XOS']['rate']) ? (float) $currencies['XOS']['rate'] : 0;
+
+            if ($rate_eur <= 0) {
+                $rate_eur = function_exists('wmc_get_exchange_rate') ? (float) wmc_get_exchange_rate('EUR') : 0;
+            }
+
+            if ($rate_xos <= 0) {
+                $rate_xos = function_exists('wmc_get_exchange_rate') ? (float) wmc_get_exchange_rate('XOS') : 0;
+            }
+
+            if ($rate_eur <= 0 || $rate_xos <= 0) {
+                return null;
+            }
+
+            $xos_per_eur = $rate_xos / $rate_eur;
+            if ($xos_per_eur <= 0) {
+                return null;
+            }
+
+            $fixed_markup = isset($config['fixed_markup_xos']) ? (float) $config['fixed_markup_xos'] : 0;
+
+            $regular_xos = $regular_eur > 0
+                ? self::round_with_threshold_to_int(($regular_eur * $xos_per_eur) + $fixed_markup, 0.2)
+                : 0;
+            $promo_xos = $promo_eur > 0
+                ? self::round_with_threshold_to_int(($promo_eur * $xos_per_eur) + $fixed_markup, 0.2)
+                : 0;
+
+            return [
+                'regular_xos' => $regular_xos,
+                'promo_xos' => $promo_xos,
+                'rate' => $xos_per_eur,
+            ];
+        } catch (Throwable $e) {
+            CWSB_Logger::error('convert_eur_to_xos_live threw exception', ['message' => $e->getMessage()]);
             return null;
         }
     }
