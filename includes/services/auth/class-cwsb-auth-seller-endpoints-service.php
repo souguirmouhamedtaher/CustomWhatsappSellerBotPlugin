@@ -85,14 +85,29 @@ class CWSB_Auth_Seller_Endpoints_Service
         return CWSB_Auth_Product_Endpoints_Service::get_seller_products_by_flow_token($request);
     }
 
+    public static function get_seller_products_by_flow_token_xof(WP_REST_Request $request)
+    {
+        return CWSB_Auth_Product_Endpoints_Service::get_seller_products_by_flow_token_xof($request);
+    }
+
     public static function get_seller_product_by_id(WP_REST_Request $request)
     {
         return CWSB_Auth_Product_Endpoints_Service::get_seller_product_by_id($request);
     }
 
+    public static function get_seller_product_by_id_xof(WP_REST_Request $request)
+    {
+        return CWSB_Auth_Product_Endpoints_Service::get_seller_product_by_id_xof($request);
+    }
+
     public static function get_seller_product_variation_by_id(WP_REST_Request $request)
     {
         return CWSB_Auth_Product_Endpoints_Service::get_seller_product_variation_by_id($request);
+    }
+
+    public static function get_seller_product_variation_by_id_xof(WP_REST_Request $request)
+    {
+        return CWSB_Auth_Product_Endpoints_Service::get_seller_product_variation_by_id_xof($request);
     }
 
     public static function get_seller_orders_by_flow_token(WP_REST_Request $request)

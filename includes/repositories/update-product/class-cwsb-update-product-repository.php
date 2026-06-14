@@ -53,6 +53,6 @@ class CWSB_Update_Product_Repository
 
     public static function update_product_xof($product_id, $seller_user_id, $data)
     {
-        return CWSB_Update_Product_Writer::update_product($product_id, $seller_user_id, $data);
+        return CWSB_Update_Product_Writer::update_product_xof($product_id, $seller_user_id, $data);
     }
 }

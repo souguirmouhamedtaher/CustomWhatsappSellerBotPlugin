@@ -43,6 +43,16 @@ class CWSB_Product_Repository
         return self::find_products_by_seller_user_id($seller_user_id);
     }
 
+    public static function find_products_by_seller_phone_xof($phone)
+    {
+        $seller_user_id = CWSB_Product_Resolver::find_state_user_id_by_phone($phone);
+        if ($seller_user_id <= 0) {
+            return [];
+        }
+
+        return self::find_products_by_seller_user_id_xof($seller_user_id);
+    }
+
     public static function find_products_by_seller_flow_token($flow_token)
     {
         $seller_user_id = CWSB_Product_Resolver::find_state_user_id_by_flow_token($flow_token);
@@ -61,6 +71,24 @@ class CWSB_Product_Repository
         return self::find_products_by_seller_user_id($seller_user_id);
     }
 
+    public static function find_products_by_seller_flow_token_xof($flow_token)
+    {
+        $seller_user_id = CWSB_Product_Resolver::find_state_user_id_by_flow_token($flow_token);
+
+        if ($seller_user_id <= 0) {
+            $phone = CWSB_Utils::extract_phone_from_flow_token($flow_token);
+            if ($phone !== '') {
+                $seller_user_id = CWSB_Product_Resolver::find_state_user_id_by_phone($phone);
+            }
+        }
+
+        if ($seller_user_id <= 0) {
+            return [];
+        }
+
+        return self::find_products_by_seller_user_id_xof($seller_user_id);
+    }
+
     public static function find_product_by_id($product_id)
     {
         $pid = (int) $product_id;
@@ -69,6 +97,16 @@ class CWSB_Product_Repository
         }
 
         return CWSB_Product_Mapper::map_product_detail_by_sql($pid, self::MAX_CAROUSEL_IMAGES);
+    }
+
+    public static function find_product_by_id_xof($product_id)
+    {
+        $pid = (int) $product_id;
+        if ($pid <= 0) {
+            return null;
+        }
+
+        return CWSB_Product_Mapper::map_product_detail_by_sql_xof($pid, self::MAX_CAROUSEL_IMAGES);
     }
 
     public static function find_variation_by_id($product_id, $variation_id)
@@ -93,6 +131,28 @@ class CWSB_Product_Repository
         return CWSB_Product_Mapper::map_variation_by_post_id($vid, $parent_image_src);
     }
 
+    public static function find_variation_by_id_xof($product_id, $variation_id)
+    {
+        $pid = (int) $product_id;
+        $vid = (int) $variation_id;
+        if ($pid <= 0 || $vid <= 0) {
+            return null;
+        }
+
+        $variation_post = get_post($vid);
+        if (!$variation_post || (int) $variation_post->post_parent !== $pid || $variation_post->post_type !== 'product_variation') {
+            return null;
+        }
+
+        $parent_image_src = '';
+        $parent_image_id = (int) get_post_meta($pid, '_thumbnail_id', true);
+        if ($parent_image_id > 0) {
+            $parent_image_src = (string) wp_get_attachment_image_url($parent_image_id, 'full');
+        }
+
+        return CWSB_Product_Mapper::map_variation_by_post_id_xof($vid, $parent_image_src);
+    }
+
     private static function find_products_by_seller_user_id($seller_user_id)
     {
         $rows = CWSB_Product_Queries::find_products_rows_by_seller_user_id((int) $seller_user_id, (int) self::DEFAULT_PRODUCTS_LIMIT);
@@ -100,6 +160,18 @@ class CWSB_Product_Repository
         $products = [];
         foreach ((array) $rows as $row) {
             $products[] = CWSB_Product_Mapper::map_list_row($row);
+        }
+
+        return $products;
+    }
+
+    private static function find_products_by_seller_user_id_xof($seller_user_id)
+    {
+        $rows = CWSB_Product_Queries::find_products_rows_by_seller_user_id_xof((int) $seller_user_id, (int) self::DEFAULT_PRODUCTS_LIMIT);
+
+        $products = [];
+        foreach ((array) $rows as $row) {
+            $products[] = CWSB_Product_Mapper::map_list_row_xof($row);
         }
 
         return $products;

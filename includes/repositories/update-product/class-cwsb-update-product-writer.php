@@ -289,6 +289,108 @@ class CWSB_Update_Product_Writer
     }
 
     /**
+     * Dedicated XOF update path to keep TND pricing logic isolated.
+     *
+     * This method handles XOF/EUR pricing writes first, then delegates
+     * non-pricing fields to the shared updater with currency keys removed.
+     */
+    public static function update_product_xof($product_id, $seller_user_id, $data)
+    {
+        global $wpdb;
+
+        $product_id     = (int) $product_id;
+        $seller_user_id = (int) $seller_user_id;
+
+        $owner_row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT post_author FROM {$wpdb->posts}
+                  WHERE ID = %d AND post_type = 'product' LIMIT 1",
+                $product_id
+            ),
+            ARRAY_A
+        );
+
+        if (!$owner_row) {
+            return false;
+        }
+
+        $owner = (int) $owner_row['post_author'];
+        if ($owner !== $seller_user_id) {
+            return false;
+        }
+
+        $regular_eur_norm = isset($data['regular_eur']) ? CWSB_Utils::to_money_string($data['regular_eur']) : null;
+        $sale_eur_norm = isset($data['sale_eur']) ? CWSB_Utils::to_money_string($data['sale_eur']) : null;
+        $regular_xof_norm = isset($data['regular_xof']) ? CWSB_Utils::to_money_string($data['regular_xof']) : null;
+        $sale_xof_norm = isset($data['sale_xof']) ? CWSB_Utils::to_money_string($data['sale_xof']) : null;
+
+        if (isset($data['regular_xof'])) {
+            self::replace_product_meta($product_id, '_regular_price_xof', $regular_xof_norm);
+            self::replace_or_delete_product_meta($product_id, 'regular_price_xof', $regular_xof_norm);
+            self::replace_or_delete_product_meta(
+                $product_id,
+                '_regular_price_wmcp',
+                self::build_wmcp_xof_json($regular_xof_norm)
+            );
+        }
+        if (isset($data['sale_xof'])) {
+            self::replace_or_delete_product_meta($product_id, '_sale_price_xof', $sale_xof_norm);
+            self::replace_or_delete_product_meta($product_id, 'sale_price_xof', $sale_xof_norm);
+            self::replace_or_delete_product_meta(
+                $product_id,
+                '_sale_price_wmcp',
+                self::build_wmcp_xof_json($sale_xof_norm)
+            );
+        }
+
+        if (!isset($data['sale_xof']) && isset($data['regular_xof'])) {
+            self::replace_or_delete_product_meta($product_id, '_sale_price_wmcp', '');
+            self::replace_or_delete_product_meta($product_id, 'sale_price_xof', '');
+        }
+
+        if (isset($data['regular_xof']) || isset($data['sale_xof'])) {
+            $effective_xof = ($sale_xof_norm !== null && $sale_xof_norm !== '')
+                ? $sale_xof_norm
+                : (($regular_xof_norm !== null) ? $regular_xof_norm : CWSB_Utils::to_money_string(get_post_meta($product_id, '_regular_price_xof', true)));
+            self::replace_or_delete_product_meta($product_id, '_price_xof', $effective_xof);
+            self::replace_or_delete_product_meta($product_id, 'price_xof', $effective_xof);
+        }
+
+        if (isset($data['regular_xof']) && !isset($data['regular_eur'])) {
+            $regular_eur_norm = self::xof_to_eur_with_fallback($regular_xof_norm);
+            self::replace_or_delete_product_meta($product_id, '_regular_price', $regular_eur_norm);
+        } elseif (isset($data['regular_eur'])) {
+            self::replace_or_delete_product_meta($product_id, '_regular_price', $regular_eur_norm);
+        }
+
+        if (isset($data['sale_xof']) && !isset($data['sale_eur'])) {
+            $sale_eur_norm = self::xof_to_eur_with_fallback($sale_xof_norm);
+            self::replace_or_delete_product_meta($product_id, '_sale_price', $sale_eur_norm);
+        } elseif (isset($data['sale_eur'])) {
+            self::replace_or_delete_product_meta($product_id, '_sale_price', $sale_eur_norm);
+        }
+
+        if (isset($data['regular_eur']) || isset($data['sale_eur']) || isset($data['regular_xof']) || isset($data['sale_xof'])) {
+            $effective_eur = ($sale_eur_norm !== null && $sale_eur_norm !== '')
+                ? $sale_eur_norm
+                : (($regular_eur_norm !== null) ? $regular_eur_norm : CWSB_Utils::to_money_string(get_post_meta($product_id, '_regular_price', true)));
+            self::replace_or_delete_product_meta($product_id, '_price', $effective_eur);
+        }
+
+        $delegated_data = is_array($data) ? $data : [];
+        unset(
+            $delegated_data['regular_eur'],
+            $delegated_data['sale_eur'],
+            $delegated_data['regular_xof'],
+            $delegated_data['sale_xof'],
+            $delegated_data['regular_tnd'],
+            $delegated_data['sale_tnd']
+        );
+
+        return self::update_product($product_id, $seller_user_id, $delegated_data);
+    }
+
+    /**
      * Replace a postmeta key with exactly one row to avoid duplicate values.
      */
     private static function replace_product_meta($product_id, $meta_key, $meta_value)
@@ -323,6 +425,23 @@ class CWSB_Update_Product_Writer
         ]);
 
         return is_string($payload) ? $payload : '{"TND":"' . $normalized . '"}';
+    }
+
+    /**
+     * Builds WMCP-compatible XOF JSON payload (e.g. {"XOF":"1000"}).
+     */
+    private static function build_wmcp_xof_json($amount)
+    {
+        $normalized = CWSB_Utils::to_money_string($amount);
+        if ($normalized === '') {
+            return '';
+        }
+
+        $payload = wp_json_encode([
+            'XOF' => (string) $normalized,
+        ]);
+
+        return is_string($payload) ? $payload : '{"XOF":"' . $normalized . '"}';
     }
 
     /**

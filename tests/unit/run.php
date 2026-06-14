@@ -40,6 +40,28 @@ if (!function_exists('number_format')) {
 require_once __DIR__ . '/../../includes/utilities/class-cwsb-logger.php';
 require_once __DIR__ . '/../../includes/utilities/class-cwsb-utils.php';
 require_once __DIR__ . '/../../includes/services/add-product/class-cwsb-add-product-support-service.php';
+require_once __DIR__ . '/../../includes/repositories/update-product/class-cwsb-update-product-writer.php';
+require_once __DIR__ . '/../../includes/repositories/product/class-cwsb-product-queries.php';
+require_once __DIR__ . '/../../includes/repositories/product/class-cwsb-product-mapper.php';
+require_once __DIR__ . '/../../includes/repositories/product/class-cwsb-product-repository.php';
+
+if (!function_exists('wp_json_encode')) {
+    function wp_json_encode($value)
+    {
+        return json_encode($value);
+    }
+}
+
+if (!function_exists('mysql2date')) {
+    function mysql2date($format, $date)
+    {
+        $ts = strtotime((string) $date);
+        if ($ts === false) {
+            return '';
+        }
+        return date($format, $ts);
+    }
+}
 
 if (!function_exists('wmc_get_price')) {
     function wmc_get_price($value = null)
@@ -523,6 +545,70 @@ run_test('validate_create_payload_xof: promo_xof >= regular_xof returns error', 
     assert_equals(true, in_array('product.pricing.promo_xof', $fields, true), 'promo xof invalid range error');
 });
 
+// --- explicit XOF update query/mapper parity --------------------------------
+
+run_test('update writer WMCP builders: TND and XOF payload keys are isolated', function () {
+    $ref = new ReflectionClass('CWSB_Update_Product_Writer');
+
+    $tndBuilder = $ref->getMethod('build_wmcp_tnd_json');
+    $tndBuilder->setAccessible(true);
+    $xofBuilder = $ref->getMethod('build_wmcp_xof_json');
+    $xofBuilder->setAccessible(true);
+
+    $tndJson = $tndBuilder->invoke(null, 123.45);
+    $xofJson = $xofBuilder->invoke(null, 50000);
+
+    $tnd = json_decode($tndJson, true);
+    $xof = json_decode($xofJson, true);
+
+    assert_equals('123.45', isset($tnd['TND']) ? (string) $tnd['TND'] : '', 'tnd key present');
+    assert_equals(true, !isset($tnd['XOF']), 'tnd payload excludes xof key');
+    $xofRaw = isset($xof['XOF']) ? (string) $xof['XOF'] : '';
+    assert_equals(true, in_array($xofRaw, ['50000', '50000.00'], true), 'xof key present');
+    assert_equals(true, !isset($xof['TND']), 'xof payload excludes tnd key');
+});
+
+run_test('product mapper xof: list mapping exposes xof keys', function () {
+    $row = [
+        'ID' => 99,
+        'post_title' => 'XOF Product',
+        'post_date' => '2026-06-14 10:00:00',
+        'post_status' => 'publish',
+        'sku' => 'SKU-XOF',
+        'regular_price' => '20.00',
+        'sale_price' => '',
+        'price' => '20.00',
+        'regular_price_xof' => '10000.00',
+        'sale_price_xof' => '9000.00',
+        'price_xof' => '9000.00',
+        'stock' => '3',
+        'manage_stock' => 'yes',
+        'thumbnail_id' => 0,
+        'has_variations' => 0,
+    ];
+
+    $mapped = CWSB_Product_Mapper::map_list_row_xof($row);
+
+    assert_equals('10000.00', $mapped['general_price_xof'] ?? '', 'general xof');
+    assert_equals('9000.00', $mapped['promo_price_xof'] ?? '', 'promo xof');
+    assert_equals('9000.00', $mapped['price'] ?? '', 'effective list price is xof');
+    assert_equals('', $mapped['general_price_tnd'] ?? '', 'tnd remains isolated in xof mapper');
+});
+
+run_test('xof parity API surface: required xof methods exist', function () {
+    assert_equals(true, method_exists('CWSB_Product_Queries', 'find_products_rows_by_seller_user_id_xof'), 'queries xof list method');
+    assert_equals(true, method_exists('CWSB_Product_Queries', 'find_product_detail_row_by_id_xof'), 'queries xof detail method');
+    assert_equals(true, method_exists('CWSB_Product_Queries', 'find_variations_rows_for_product_xof'), 'queries xof variation method');
+
+    assert_equals(true, method_exists('CWSB_Product_Mapper', 'map_list_row_xof'), 'mapper xof list method');
+    assert_equals(true, method_exists('CWSB_Product_Mapper', 'map_product_detail_by_sql_xof'), 'mapper xof detail method');
+    assert_equals(true, method_exists('CWSB_Product_Mapper', 'map_variation_by_post_id_xof'), 'mapper xof variation method');
+
+    assert_equals(true, method_exists('CWSB_Product_Repository', 'find_products_by_seller_flow_token_xof'), 'repository xof list method');
+    assert_equals(true, method_exists('CWSB_Product_Repository', 'find_product_by_id_xof'), 'repository xof detail method');
+    assert_equals(true, method_exists('CWSB_Product_Repository', 'find_variation_by_id_xof'), 'repository xof variation method');
+});
+
 run_test('validate_create_payload: non-array payload returns errors gracefully', function () {
     $errors = CWSB_Add_Product_Support_Service::validate_create_payload(null);
     assert_equals(true, count($errors) > 0, 'non-array has errors');
@@ -594,7 +680,7 @@ run_test('to_bool: truthy and falsy values', function () {
 });
 
 // ---------------------------------------------------------------------------
-// 5. Tests: CWSB_Logger (no WP dependency â€” only uses microtime / error_log)
+// 5. Tests: CWSB_Logger (no WP dependency ” only uses microtime / error_log)
 // ---------------------------------------------------------------------------
 
 run_test('CWSB_Logger::measure: returns result and elapsed_ms', function () {

@@ -237,10 +237,22 @@ class CWSB_Update_Product_Controller
             'images',
         ];
 
-        $data = [];
-        foreach ($allowed_fields as $field) {
-            if ($request->has_param($field)) {
-                $data[$field] = $request->get_param($field);
+        // Parity with TND endpoint: accept nested data object first.
+        $payload_data = $request->get_param('data');
+        if (is_array($payload_data) && !empty($payload_data)) {
+            $data = [];
+            foreach ($allowed_fields as $field) {
+                if (array_key_exists($field, $payload_data)) {
+                    $data[$field] = $payload_data[$field];
+                }
+            }
+        } else {
+            // Backward compatibility: also accept flat XOF payload fields.
+            $data = [];
+            foreach ($allowed_fields as $field) {
+                if ($request->has_param($field)) {
+                    $data[$field] = $request->get_param($field);
+                }
             }
         }
 

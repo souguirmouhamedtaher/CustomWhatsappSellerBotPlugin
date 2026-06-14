@@ -133,6 +133,18 @@ class CWSB_Auth_Controller
             ],
         ]);
 
+        register_rest_route(CWSB_NS, '/seller/products-xof/by-flow-token', [
+            'methods' => 'POST',
+            'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_products_by_flow_token_xof'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args' => [
+                'flow_token' => ['required' => false],
+                'phone' => ['required' => false],
+                'page' => ['required' => false],
+                'per_page' => ['required' => false],
+            ],
+        ]);
+
         register_rest_route(CWSB_NS, '/seller/product/by-id', [
             'methods' => 'POST',
             'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_product_by_id'],
@@ -140,9 +152,26 @@ class CWSB_Auth_Controller
             'args' => ['product_id' => ['required' => true]],
         ]);
 
+        register_rest_route(CWSB_NS, '/seller/product-xof/by-id', [
+            'methods' => 'POST',
+            'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_product_by_id_xof'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args' => ['product_id' => ['required' => true]],
+        ]);
+
         register_rest_route(CWSB_NS, '/seller/product/variation/by-id', [
             'methods' => 'POST',
             'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_product_variation_by_id'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args' => [
+                'product_id' => ['required' => true],
+                'variation_id' => ['required' => true],
+            ],
+        ]);
+
+        register_rest_route(CWSB_NS, '/seller/product/variation-xof/by-id', [
+            'methods' => 'POST',
+            'callback' => ['CWSB_Auth_Seller_Endpoints_Service', 'get_seller_product_variation_by_id_xof'],
             'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
             'args' => [
                 'product_id' => ['required' => true],

@@ -146,5 +146,4 @@ class CWSB_Auth_Order_Endpoints_Service
             'articles' => (isset($paged['articles']) && is_array($paged['articles'])) ? $paged['articles'] : [],
         ]);
     }
-
 }
