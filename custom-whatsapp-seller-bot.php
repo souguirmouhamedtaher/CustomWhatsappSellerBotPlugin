@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom WhatsApp Seller Bot
 Description: Seller lookup endpoints for WhatsApp bot.
-Version: 1.0.23
+Version: 1.0.24
 Author: ILEYCOM-INTERNSHIPS
 */
 
@@ -31,7 +31,13 @@ require_once CWSB_PLUGIN_DIR . 'config/constants.php';
 require_once CWSB_PLUGIN_DIR . 'includes/utilities/class-cwsb-plugin-updater.php';
 
 /**
- * Send no-cache headers for this plugin namespace during REST responses.
+ * Applies strict no-cache behavior for this plugin's REST namespace responses.
+ *
+ * This function is wired through the WordPress native filter `rest_pre_serve_request`
+ * and checks the request route before applying cache-busting behavior. It uses
+ * `nocache_headers()` and defines standard cache flags (`DONOTCACHEPAGE`,
+ * `DONOTCACHEDB`) so reverse proxies and page-cache plugins do not serve stale
+ * API data for WhatsApp bot requests. Non-plugin routes are returned untouched.
  */
 function cwsb_send_rest_no_cache_headers($served, $result, $request, $server)
 {
@@ -54,10 +60,12 @@ function cwsb_send_rest_no_cache_headers($served, $result, $request, $server)
 }
 
 /**
- * Creates/updates plugin tables on activation.
+ * Creates or upgrades plugin persistence tables using WordPress schema tooling.
  *
- * Stores seller flow-related state that is used by WhatsApp auth flow screens.
- * Uses dbDelta so schema changes are safely applied over time.
+ * The function builds SQL for the seller-state table and delegates migration-safe
+ * execution to the WordPress native `dbDelta()` API from upgrade.php. This keeps
+ * installation idempotent and allows incremental schema changes across releases
+ * without manual SQL coordination.
  */
 function cwsb_create_tables()
 {
@@ -103,8 +111,12 @@ function cwsb_create_tables()
 }
 
 /**
- * Ensures seller state table exists during runtime (first-run/self-healing).
- * Keeps API usable even when plugin activation hook did not run for this DB.
+ * Ensures the seller-state table exists at runtime as a self-healing safeguard.
+ *
+ * This function is invoked on `plugins_loaded` and `rest_api_init` to cover cases
+ * where activation hooks were skipped (for example, DB import or direct file sync).
+ * It uses WordPress database access (`$wpdb`) and falls back to `cwsb_create_tables()`
+ * when `SHOW TABLES LIKE` indicates the table is missing.
  */
 function cwsb_ensure_tables()
 {
@@ -126,7 +138,12 @@ function cwsb_ensure_tables()
 }
 
 /**
- * Applies lightweight schema upgrades for already-installed tables.
+ * Applies additive schema upgrades for already-installed seller-state tables.
+ *
+ * The function executes guarded ALTER statements only when columns or indexes are
+ * missing, using WordPress database inspection via `SHOW COLUMNS` and `SHOW INDEX`.
+ * This keeps upgrades backward-compatible across plugin versions and avoids hard
+ * failures when sites are migrated from older schemas.
  */
 function cwsb_upgrade_schema_if_needed()
 {
@@ -217,8 +234,10 @@ function cwsb_upgrade_schema_if_needed()
 /**
  * Lazy-load REST controllers and register plugin routes.
  *
- * Keeping this work inside rest_api_init avoids loading the full class graph
- * for non-REST requests (for example wp-admin pages), lowering memory usage.
+ * Keeping this work inside `rest_api_init` avoids loading the full class graph for
+ * non-REST requests and reduces memory overhead on standard WordPress page loads.
+ * Route registration itself happens inside controller classes through WordPress
+ * native `register_rest_route()` calls.
  */
 function cwsb_register_rest_routes()
 {
@@ -236,7 +255,11 @@ function cwsb_register_rest_routes()
 }
 
 /**
- * Boots GitHub-based plugin updates for in-place WordPress upgrades.
+ * Boots the GitHub-backed updater integration for WordPress plugin updates.
+ *
+ * This function runs during `plugins_loaded` and initializes the updater only when
+ * WordPress is not in installation mode. It delegates to the updater service which
+ * hooks into WordPress update mechanisms to surface remote releases in the plugins UI.
  */
 function cwsb_bootstrap_plugin_updater()
 {

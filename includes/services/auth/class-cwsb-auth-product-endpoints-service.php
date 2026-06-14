@@ -17,6 +17,13 @@ if (!class_exists('CWSB_Product_Repository')) {
  */
 class CWSB_Auth_Product_Endpoints_Service
 {
+    /**
+     * Returns paginated seller products for TND-oriented listing endpoints.
+     *
+     * The method reads identity and paging parameters from the WordPress REST request, resolves
+     * products through repository methods (phone or flow-token path), then performs in-memory page
+     * slicing and returns pagination metadata in a normalized response payload.
+     */
     public static function get_seller_products_by_flow_token(WP_REST_Request $request)
     {
         $flow_token = (string) $request->get_param('flow_token');
@@ -52,6 +59,12 @@ class CWSB_Auth_Product_Endpoints_Service
         ]);
     }
 
+    /**
+     * Returns paginated seller products for XOF-oriented listing endpoints.
+     *
+     * This method mirrors the TND list flow but delegates to XOF repository read paths so price
+     * mapping reflects XOF fields while preserving pagination and response shape parity.
+     */
     public static function get_seller_products_by_flow_token_xof(WP_REST_Request $request)
     {
         $flow_token = (string) $request->get_param('flow_token');
@@ -87,6 +100,12 @@ class CWSB_Auth_Product_Endpoints_Service
         ]);
     }
 
+    /**
+     * Returns a single product detail payload by product ID (TND-oriented read path).
+     *
+     * The endpoint validates required product identity and delegates full product assembly to
+     * repository/mapping layers before returning standardized response envelopes.
+     */
     public static function get_seller_product_by_id(WP_REST_Request $request)
     {
         $product_id = (string) $request->get_param('product_id');
@@ -99,6 +118,12 @@ class CWSB_Auth_Product_Endpoints_Service
         return CWSB_Response::ok(['product' => $product ?: null]);
     }
 
+    /**
+     * Returns a single product detail payload by product ID (XOF-oriented read path).
+     *
+     * The method validates request input and delegates to XOF-aware repository mapping so
+     * consumers receive XOF pricing fields in the detail payload.
+     */
     public static function get_seller_product_by_id_xof(WP_REST_Request $request)
     {
         $product_id = (string) $request->get_param('product_id');
@@ -111,6 +136,12 @@ class CWSB_Auth_Product_Endpoints_Service
         return CWSB_Response::ok(['product' => $product ?: null]);
     }
 
+    /**
+     * Returns variation detail payload for a product variation (TND-oriented read path).
+     *
+     * It validates both product and variation identifiers from `WP_REST_Request` and relies on
+     * repository checks to ensure variation-parent consistency before responding.
+     */
     public static function get_seller_product_variation_by_id(WP_REST_Request $request)
     {
         $product_id = (string) $request->get_param('product_id');
@@ -124,6 +155,12 @@ class CWSB_Auth_Product_Endpoints_Service
         return CWSB_Response::ok(['variation' => $variation ?: null]);
     }
 
+    /**
+     * Returns variation detail payload for a product variation (XOF-oriented read path).
+     *
+     * The method mirrors the TND variation flow but delegates to XOF-aware repository mapping so
+     * variation pricing values are read from XOF meta keys.
+     */
     public static function get_seller_product_variation_by_id_xof(WP_REST_Request $request)
     {
         $product_id = (string) $request->get_param('product_id');

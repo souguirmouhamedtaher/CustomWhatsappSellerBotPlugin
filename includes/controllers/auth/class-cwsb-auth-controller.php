@@ -17,6 +17,13 @@ if (!class_exists('CWSB_Auth_Seller_Endpoints_Service')) {
  */
 class CWSB_Auth_Controller
 {
+    /**
+     * Registers all authentication, seller, product, order, and wallet REST routes.
+     *
+     * This method acts as the route contract hub for the auth domain and binds every endpoint
+     * through the WordPress native `register_rest_route()` function. Each route includes callback,
+     * permission checks, and argument shape so WordPress can validate and dispatch requests.
+     */
     public static function register_routes()
     {
         register_rest_route(CWSB_NS, '/seller/all', [

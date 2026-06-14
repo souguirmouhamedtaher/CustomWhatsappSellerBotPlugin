@@ -23,8 +23,11 @@ if (!class_exists('CWSB_Wallet_Repository')) {
 class CWSB_Auth_Wallet_Endpoints_Service
 {
     /**
-     * GET full wallet balances (tnd_balance, eur_balance, combined_tnd, …).
-     * Used by POST /seller/wallet/by-flow-token.
+    * Returns the full wallet snapshot for a seller resolved from flow token.
+    *
+    * This method validates required flow-token input from `WP_REST_Request`, delegates wallet
+    * assembly to repository logic, and returns a 404 contract when seller resolution fails.
+    * It serves the POST `/seller/wallet/by-flow-token` endpoint.
      */
     public static function get_seller_wallet_by_flow_token(WP_REST_Request $request)
     {
@@ -44,8 +47,11 @@ class CWSB_Auth_Wallet_Endpoints_Service
     }
 
     /**
-     * GET wallet summary: balance, currency, pending_balance, last_tx_at.
-     * Used by POST /seller/wallet/summary/by-flow-token.
+        * Returns compact wallet summary fields for seller dashboard use-cases.
+        *
+        * The method validates flow-token presence, delegates summary retrieval to the repository,
+        * and returns a normalized response including balance, currency, pending balance, and
+        * last transaction timestamp for POST `/seller/wallet/summary/by-flow-token`.
      */
     public static function get_seller_wallet_summary_by_flow_token(WP_REST_Request $request)
     {
@@ -70,10 +76,11 @@ class CWSB_Auth_Wallet_Endpoints_Service
     }
 
     /**
-     * GET paginated wallet transactions (one per completed order).
-     * Used by POST /seller/wallet/transactions/by-flow-token.
+        * Returns paginated wallet transactions for a seller resolved by flow token.
      *
-     * Returns empty shape (200) if seller not found — flow never errors out.
+        * This endpoint validates required flow token, normalizes page/limit from the WordPress
+        * request object, delegates paging to repository logic, and returns a stable pagination
+        * envelope for POST `/seller/wallet/transactions/by-flow-token`.
      */
     public static function get_seller_wallet_transactions_by_flow_token(WP_REST_Request $request)
     {

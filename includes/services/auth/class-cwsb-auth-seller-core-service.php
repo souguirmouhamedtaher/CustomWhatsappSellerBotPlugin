@@ -17,6 +17,13 @@ if (!class_exists('CWSB_Seller_Repository')) {
  */
 class CWSB_Auth_Seller_Core_Service
 {
+    /**
+     * Applies anti-cache headers and cache-bypass flags for dynamic auth responses.
+     *
+     * The method calls the WordPress native `nocache_headers()` helper and sets common
+     * no-cache constants so seller/session state endpoints are not cached by page-cache
+     * plugins or intermediate proxies.
+     */
     public static function prevent_response_caching()
     {
         nocache_headers();
@@ -28,6 +35,13 @@ class CWSB_Auth_Seller_Core_Service
         }
     }
 
+    /**
+     * Returns a paginated list of sellers from repository storage.
+     *
+     * It reads pagination values from `WP_REST_Request`, enforces safe bounds, then delegates
+     * retrieval/count operations to repository methods before returning a standardized JSON
+     * payload via the shared response utility.
+     */
     public static function get_all_sellers(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -50,6 +64,12 @@ class CWSB_Auth_Seller_Core_Service
         ]);
     }
 
+    /**
+     * Returns seller information resolved by phone number.
+     *
+     * The method accepts a WordPress REST request, delegates lookup to the seller repository,
+     * and always returns a consistent `seller` field shape (`null` when not found).
+     */
     public static function get_seller_by_phone(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -61,6 +81,12 @@ class CWSB_Auth_Seller_Core_Service
         ]);
     }
 
+    /**
+     * Returns seller state row and vendor-existence flag for a phone number.
+     *
+     * After retrieving state data from repository storage, this method performs a vendor role
+     * existence check and returns both artifacts so upstream clients can decide auth flow steps.
+     */
     public static function get_seller_state_by_phone(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -79,6 +105,12 @@ class CWSB_Auth_Seller_Core_Service
         ]);
     }
 
+    /**
+     * Returns seller information resolved by flow token.
+     *
+     * The method delegates token lookup to repository logic and wraps the result in the standard
+     * response envelope expected by auth flow consumers.
+     */
     public static function get_seller_by_flow_token(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -90,6 +122,12 @@ class CWSB_Auth_Seller_Core_Service
         ]);
     }
 
+    /**
+     * Updates the seller verification code associated with a flow token.
+     *
+     * It validates required request fields, delegates persistence to the repository layer, and
+     * returns either a validation error or a normalized success payload.
+     */
     public static function update_seller_code(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -107,6 +145,12 @@ class CWSB_Auth_Seller_Core_Service
         ]);
     }
 
+    /**
+     * Inserts or updates seller auth-state data using phone as identity anchor.
+     *
+     * The method builds a state payload from optional request fields (token/session/reset metadata)
+     * and delegates write logic to repository code that manages seller-state records.
+     */
     public static function insert_seller_state(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -137,6 +181,12 @@ class CWSB_Auth_Seller_Core_Service
         ]);
     }
 
+    /**
+     * Activates a seller session by setting a positive session expiry timestamp.
+     *
+     * It validates required parameters from the WordPress REST request and delegates timestamp
+     * persistence to repository logic for flow-token-scoped sessions.
+     */
     public static function activate_seller_session(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -151,6 +201,12 @@ class CWSB_Auth_Seller_Core_Service
         return CWSB_Response::ok(['seller' => $seller ?: null]);
     }
 
+    /**
+     * Deactivates a seller session by clearing active-until timestamp state.
+     *
+     * The method validates flow token presence and delegates the null-timestamp write to repository
+     * storage, effectively terminating active seller session state.
+     */
     public static function deactivate_seller_session(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -164,6 +220,12 @@ class CWSB_Auth_Seller_Core_Service
         return CWSB_Response::ok(['seller' => $seller ?: null]);
     }
 
+    /**
+     * Returns sellers nearing session expiry and pending auth portal notification.
+     *
+     * It parses pagination and lead-time parameters, applies conservative limits, and delegates
+     * selection logic to repository queries optimized for reminder workflows.
+     */
     public static function get_pre_expiry_auth_pending_sellers(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -191,6 +253,12 @@ class CWSB_Auth_Seller_Core_Service
         ]);
     }
 
+    /**
+     * Marks auth-portal notification as sent for a seller phone number.
+     *
+     * The method validates phone and timestamp semantics, defaults `sent_at` when omitted, then
+     * delegates update behavior to repository logic and returns not-found/write outcomes clearly.
+     */
     public static function mark_auth_portal_sent(WP_REST_Request $request)
     {
         self::prevent_response_caching();
@@ -217,6 +285,12 @@ class CWSB_Auth_Seller_Core_Service
         ]);
     }
 
+    /**
+     * Persists a password-reset token and expiry for a seller identified by email.
+     *
+     * The method validates required fields from the incoming request and delegates persistence
+     * to repository logic, returning explicit error contracts for invalid input or write failures.
+     */
     public static function set_seller_reset_token(WP_REST_Request $request)
     {
         $email = (string) $request->get_param('email');

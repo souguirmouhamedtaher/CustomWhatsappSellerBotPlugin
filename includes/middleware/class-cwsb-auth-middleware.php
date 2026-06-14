@@ -14,12 +14,17 @@ if (!class_exists('CWSB_Logger')) {
 class CWSB_Auth_Middleware
 {
     /**
-     * Validates x-api-key header against plugin configuration.
+        * Validates the inbound API key header against plugin-level secret configuration.
      *
      * Resolution order for expected key:
      * 1) WordPress option cwsb_api_key
      * 2) CWSB_API_KEY constant
      * 3) WP_PLUGIN_API_KEY environment variable
+        *
+        * The method reads request headers from `WP_REST_Request`, resolves settings via WordPress
+        * native `get_option()`, and returns `WP_Error` when authentication fails. It uses
+        * `hash_equals()` for constant-time comparison to reduce timing-leak risk and logs request
+        * outcomes for observability.
      *
      * @return true|WP_Error
      */
@@ -72,7 +77,10 @@ class CWSB_Auth_Middleware
     }
 
     /**
-     * Validates x-admin-actor header (required admin email identifier).
+        * Validates the required admin actor identity header for privileged operations.
+        *
+        * The method enforces that `x-admin-actor` is present and formatted as an email using the
+        * WordPress native `is_email()` validator, returning `WP_Error` on invalid input.
      *
      * @return true|WP_Error
      */
@@ -91,7 +99,10 @@ class CWSB_Auth_Middleware
     }
 
     /**
-     * Combined permission callback for admin endpoints.
+        * Executes combined admin authorization by chaining API-key and actor-header validation.
+        *
+        * This helper reuses internal validators to provide a single permission callback for routes
+        * that require both API secret authentication and explicit admin actor attribution.
      *
      * @return true|WP_Error
      */

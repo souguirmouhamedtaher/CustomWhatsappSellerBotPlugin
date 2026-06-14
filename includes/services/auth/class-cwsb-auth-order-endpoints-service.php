@@ -21,6 +21,12 @@ if (!class_exists('CWSB_Utils')) {
  */
 class CWSB_Auth_Order_Endpoints_Service
 {
+    /**
+     * Returns full seller order list resolved by flow token.
+     *
+     * The method validates required flow token input from `WP_REST_Request`, delegates retrieval
+     * to the order repository, and returns count plus normalized order collection in the response.
+     */
     public static function get_seller_orders_by_flow_token(WP_REST_Request $request)
     {
         $flow_token = (string) $request->get_param('flow_token');
@@ -36,6 +42,12 @@ class CWSB_Auth_Order_Endpoints_Service
         ]);
     }
 
+    /**
+     * Returns seller order status counters resolved by flow token.
+     *
+     * It validates flow token presence, delegates aggregation to repository logic, and ensures
+     * the API response always includes a counters object even when no data is found.
+     */
     public static function get_seller_order_counters_by_flow_token(WP_REST_Request $request)
     {
         $flow_token = (string) $request->get_param('flow_token');
@@ -55,6 +67,12 @@ class CWSB_Auth_Order_Endpoints_Service
         ]);
     }
 
+    /**
+     * Returns seller order summaries with optional filter and pagination semantics.
+     *
+     * The endpoint reads optional status/page/limit from the WordPress request and chooses
+     * between paged repository queries and full-summary retrieval depending on inputs.
+     */
     public static function get_seller_order_list_by_flow_token(WP_REST_Request $request)
     {
         $flow_token = (string) $request->get_param('flow_token');
@@ -93,6 +111,12 @@ class CWSB_Auth_Order_Endpoints_Service
         ]);
     }
 
+    /**
+     * Returns one seller-scoped order detail by order ID.
+     *
+     * The method validates required flow token and order ID parameters then delegates ownership-
+     * scoped lookup to repository logic before returning a normalized order payload.
+     */
     public static function get_seller_order_by_id(WP_REST_Request $request)
     {
         $flow_token = (string) $request->get_param('flow_token');
@@ -110,6 +134,12 @@ class CWSB_Auth_Order_Endpoints_Service
         return CWSB_Response::ok(['order' => $order ?: null]);
     }
 
+    /**
+     * Returns paged order-article rows for a seller-scoped order.
+     *
+     * It validates required identifiers, applies page/limit guards, delegates article-page lookup
+     * to repository logic, and returns pagination metadata plus article rows in a fixed shape.
+     */
     public static function get_seller_order_articles_by_id(WP_REST_Request $request)
     {
         $flow_token = (string) $request->get_param('flow_token');
