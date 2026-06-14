@@ -697,9 +697,17 @@ class CWSB_Add_Product_Actions_Service
             if ($regular_xof !== '') {
                 self::replace_product_meta($product_id, '_regular_price_xof', $regular_xof);
                 self::replace_product_meta($product_id, '_price_xof', $promo_xof !== '' ? $promo_xof : $regular_xof);
+                self::replace_product_meta($product_id, '_regular_price_wmcp', self::build_wmcp_tnd_json($regular_xof));
+                // Compatibility mirrors for admin/custom views using non-underscored keys.
+                self::replace_product_meta($product_id, 'regular_price_xof', $regular_xof);
+                self::replace_product_meta($product_id, 'price_xof', $promo_xof !== '' ? $promo_xof : $regular_xof);
             }
             if ($promo_xof !== '') {
                 self::replace_product_meta($product_id, '_sale_price_xof', $promo_xof);
+                self::replace_product_meta($product_id, '_sale_price_wmcp', self::build_wmcp_tnd_json($promo_xof));
+                self::replace_product_meta($product_id, 'sale_price_xof', $promo_xof);
+            } else {
+                delete_post_meta($product_id, '_sale_price_wmcp');
             }
 
             $quantity = isset($product['quantity']) ? (int) $product['quantity'] : (isset($product['quantite']) ? (int) $product['quantite'] : 0);
