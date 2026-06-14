@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 if (!defined('ABSPATH')) {
     exit;
@@ -52,13 +52,23 @@ class CWSB_Add_Product_Controller
             ],
         ]);
 
-        register_rest_route(CWSB_NS, '/seller/pricing/convert-eur-xos', [
-            'methods' => 'POST',
-            'callback' => [self::class, 'convert_eur_to_xos_prices'],
+        register_rest_route(CWSB_NS, '/seller/pricing/convert-xof', [
+            'methods'             => 'POST',
+            'callback'            => [self::class, 'convert_eur_to_xos_prices'],
             'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
-            'args' => [
+            'args'                => [
                 'regular_eur' => ['required' => false],
-                'promo_eur' => ['required' => false],
+                'promo_eur'   => ['required' => false],
+            ],
+        ]);
+
+        register_rest_route(CWSB_NS, '/seller/pricing/convert-eur-xos', [
+            'methods'             => 'POST',
+            'callback'            => [self::class, 'convert_eur_to_xos_prices'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args'                => [
+                'regular_eur' => ['required' => false],
+                'promo_eur'   => ['required' => false],
             ],
         ]);
 
