@@ -40,6 +40,7 @@ if (!function_exists('number_format')) {
 require_once __DIR__ . '/../../includes/utilities/class-cwsb-logger.php';
 require_once __DIR__ . '/../../includes/utilities/class-cwsb-utils.php';
 require_once __DIR__ . '/../../includes/services/add-product/class-cwsb-add-product-support-service.php';
+require_once __DIR__ . '/../../includes/services/add-product/class-cwsb-add-product-actions-service.php';
 require_once __DIR__ . '/../../includes/repositories/update-product/class-cwsb-update-product-writer.php';
 require_once __DIR__ . '/../../includes/repositories/product/class-cwsb-product-queries.php';
 require_once __DIR__ . '/../../includes/repositories/product/class-cwsb-product-mapper.php';
@@ -566,6 +567,35 @@ run_test('update writer WMCP builders: TND and XOF payload keys are isolated', f
     $xofRaw = isset($xof['XOF']) ? (string) $xof['XOF'] : '';
     assert_equals(true, in_array($xofRaw, ['50000', '50000.00'], true), 'xof key present');
     assert_equals(true, !isset($xof['TND']), 'xof payload excludes tnd key');
+});
+
+run_test('add-product WMCP xof builder: payload contains XOF only', function () {
+    $ref = new ReflectionClass('CWSB_Add_Product_Actions_Service');
+    $xofBuilder = $ref->getMethod('build_wmcp_xof_json');
+    $xofBuilder->setAccessible(true);
+
+    $xofJson = $xofBuilder->invoke(null, 600);
+    $xof = json_decode($xofJson, true);
+
+    $xofRaw = isset($xof['XOF']) ? (string) $xof['XOF'] : '';
+    assert_equals(true, in_array($xofRaw, ['600', '600.00'], true), 'xof key present in add-product builder');
+    assert_equals(true, !isset($xof['TND']), 'xof payload excludes tnd key in add-product builder');
+});
+
+run_test('decode_wmcp_tnd: ignores xof payload and uses fallback', function () {
+    $xofJson = '{"XOF":"600"}';
+    $decoded = CWSB_Utils::decode_wmcp_tnd($xofJson, '55.00');
+    assert_equals('55.00', (string) $decoded, 'tnd decoder falls back when payload is xof-only');
+});
+
+run_test('decode_wmcp_xof: reads xof payload and falls back when missing', function () {
+    $xofJson = '{"XOF":"600.00"}';
+    $decoded = CWSB_Utils::decode_wmcp_xof($xofJson, '77.00');
+    assert_equals('600.00', (string) $decoded, 'xof decoder reads xof json key');
+
+    $tndJson = '{"TND":"42.00"}';
+    $fallback = CWSB_Utils::decode_wmcp_xof($tndJson, '77.00');
+    assert_equals('77.00', (string) $fallback, 'xof decoder falls back when payload is tnd-only');
 });
 
 run_test('product mapper xof: list mapping exposes xof keys', function () {

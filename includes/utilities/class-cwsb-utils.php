@@ -391,4 +391,26 @@ class CWSB_Utils
 
         return trim((string) $legacy_fallback);
     }
+
+    /**
+     * Decode a WMCP XOF meta value (JSON string like {"XOF":"100"}) and return
+     * the raw XOF amount string. Falls back to $legacy_fallback when the JSON
+     * is absent, empty, or malformed.
+     *
+     * @param string $meta_json       Raw meta_value from _regular_price_wmcp / _sale_price_wmcp.
+     * @param string $legacy_fallback Value of the old _regular_price_xof / _sale_price_xof key.
+     * @return string
+     */
+    public static function decode_wmcp_xof($meta_json, $legacy_fallback = '')
+    {
+        $raw = trim((string) $meta_json);
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded) && isset($decoded['XOF']) && trim((string) $decoded['XOF']) !== '') {
+                return trim((string) $decoded['XOF']);
+            }
+        }
+
+        return trim((string) $legacy_fallback);
+    }
 }

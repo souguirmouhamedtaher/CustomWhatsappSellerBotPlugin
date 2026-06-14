@@ -327,20 +327,35 @@ class CWSB_Update_Product_Writer
         if (isset($data['regular_xof'])) {
             self::replace_product_meta($product_id, '_regular_price_xof', $regular_xof_norm);
             self::replace_or_delete_product_meta($product_id, 'regular_price_xof', $regular_xof_norm);
+            self::replace_or_delete_product_meta(
+                $product_id,
+                '_regular_price_wmcp',
+                self::build_wmcp_xof_json($regular_xof_norm)
+            );
         }
         if (isset($data['sale_xof'])) {
             self::replace_or_delete_product_meta($product_id, '_sale_price_xof', $sale_xof_norm);
             self::replace_or_delete_product_meta($product_id, 'sale_price_xof', $sale_xof_norm);
+            self::replace_or_delete_product_meta(
+                $product_id,
+                '_sale_price_wmcp',
+                self::build_wmcp_xof_json($sale_xof_norm)
+            );
         }
 
         if (!isset($data['sale_xof']) && isset($data['regular_xof'])) {
+            self::replace_or_delete_product_meta($product_id, '_sale_price_wmcp', '');
             self::replace_or_delete_product_meta($product_id, 'sale_price_xof', '');
         }
 
-        // XOF flow must not populate shared WMCP keys used by TND pipelines.
+        // Keep TND-specific raw keys empty in XOF update flow.
         if (isset($data['regular_xof']) || isset($data['sale_xof'])) {
-            self::replace_or_delete_product_meta($product_id, '_regular_price_wmcp', '');
-            self::replace_or_delete_product_meta($product_id, '_sale_price_wmcp', '');
+            self::replace_or_delete_product_meta($product_id, '_regular_price_tnd', '');
+            self::replace_or_delete_product_meta($product_id, '_sale_price_tnd', '');
+            self::replace_or_delete_product_meta($product_id, '_price_tnd', '');
+            self::replace_or_delete_product_meta($product_id, 'regular_price_tnd', '');
+            self::replace_or_delete_product_meta($product_id, 'sale_price_tnd', '');
+            self::replace_or_delete_product_meta($product_id, 'price_tnd', '');
         }
 
         if (isset($data['regular_xof']) || isset($data['sale_xof'])) {
