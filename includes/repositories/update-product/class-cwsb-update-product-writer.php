@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 if (!defined('ABSPATH')) {
     exit;
@@ -60,6 +60,8 @@ class CWSB_Update_Product_Writer
         $price_map = [
             '_regular_price'     => 'regular_eur',
             '_sale_price'        => 'sale_eur',
+            '_regular_price_xof' => 'regular_xof',
+            '_sale_price_xof'    => 'sale_xof',
             '_regular_price_tnd' => 'regular_tnd',
             '_sale_price_tnd'    => 'sale_tnd',
         ];
@@ -71,8 +73,26 @@ class CWSB_Update_Product_Writer
 
         $regular_eur_norm = isset($data['regular_eur']) ? CWSB_Utils::to_money_string($data['regular_eur']) : null;
         $sale_eur_norm = isset($data['sale_eur']) ? CWSB_Utils::to_money_string($data['sale_eur']) : null;
+        $regular_xof_norm = isset($data['regular_xof']) ? CWSB_Utils::to_money_string($data['regular_xof']) : null;
+        $sale_xof_norm = isset($data['sale_xof']) ? CWSB_Utils::to_money_string($data['sale_xof']) : null;
         $regular_tnd_norm = isset($data['regular_tnd']) ? CWSB_Utils::to_money_string($data['regular_tnd']) : null;
         $sale_tnd_norm = isset($data['sale_tnd']) ? CWSB_Utils::to_money_string($data['sale_tnd']) : null;
+
+        if (isset($data['regular_xof']) && !isset($data['regular_eur'])) {
+            $regular_eur_norm = self::xof_to_eur_with_fallback($regular_xof_norm);
+            self::replace_product_meta($product_id, '_regular_price', $regular_eur_norm);
+        }
+        if (isset($data['sale_xof']) && !isset($data['sale_eur'])) {
+            $sale_eur_norm = self::xof_to_eur_with_fallback($sale_xof_norm);
+            self::replace_product_meta($product_id, '_sale_price', $sale_eur_norm);
+        }
+
+        if (isset($data['regular_xof']) || isset($data['sale_xof'])) {
+            $effective_xof = ($sale_xof_norm !== null && $sale_xof_norm !== '')
+                ? $sale_xof_norm
+                : (($regular_xof_norm !== null) ? $regular_xof_norm : CWSB_Utils::to_money_string(get_post_meta($product_id, '_regular_price_xof', true)));
+            self::replace_product_meta($product_id, '_price_xof', $effective_xof);
+        }
 
         // Keep compatibility keys in sync for custom admin views.
         if (isset($data['regular_tnd'])) {
@@ -303,6 +323,20 @@ class CWSB_Update_Product_Writer
         ]);
 
         return is_string($payload) ? $payload : '{"TND":"' . $normalized . '"}';
+    }
+
+    /**
+     * Fallback conversion used when caller sends only XOF values.
+     */
+    private static function xof_to_eur_with_fallback($xof_amount)
+    {
+        $xof = (float) CWSB_Utils::to_money_string($xof_amount);
+        if ($xof <= 0) {
+            return '';
+        }
+
+        $eur = ($xof / 655.957) + 9;
+        return number_format($eur, 2, '.', '');
     }
 
     /**

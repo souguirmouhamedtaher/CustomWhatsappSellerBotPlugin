@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 if (!defined('ABSPATH')) {
     exit;
@@ -36,12 +36,22 @@ class CWSB_Update_Product_Repository
         return CWSB_Update_Product_Queries::find_product_edit_info($product_id, $seller_user_id);
     }
 
+    public static function find_product_edit_info_xof($product_id, $seller_user_id)
+    {
+        return CWSB_Update_Product_Queries::find_product_edit_info_xof($product_id, $seller_user_id);
+    }
+
     public static function find_product_category_info($product_id, $seller_user_id)
     {
         return CWSB_Update_Product_Queries::find_product_category_info($product_id, $seller_user_id);
     }
 
     public static function update_product($product_id, $seller_user_id, $data)
+    {
+        return CWSB_Update_Product_Writer::update_product($product_id, $seller_user_id, $data);
+    }
+
+    public static function update_product_xof($product_id, $seller_user_id, $data)
     {
         return CWSB_Update_Product_Writer::update_product($product_id, $seller_user_id, $data);
     }

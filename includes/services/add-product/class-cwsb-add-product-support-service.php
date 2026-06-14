@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 if (!defined('ABSPATH')) {
     exit;
@@ -103,6 +103,56 @@ class CWSB_Add_Product_Support_Service
         $status = strtolower(CWSB_Utils::normalize_text($value));
         $allowed = ['draft', 'publish', 'pending', 'private'];
         return in_array($status, $allowed, true) ? $status : 'draft';
+    }
+
+    public static function get_xof_pricing_config()
+    {
+        $exchange_rate = (float) get_option('cwsb_xof_exchange_rate', 655.957);
+        if ($exchange_rate <= 0) {
+            $exchange_rate = 655.957;
+        }
+
+        $fixed_markup = (float) get_option('cwsb_eur_fixed_markup', 9);
+        $rounding_decimals = (int) get_option('cwsb_eur_rounding_decimals', 2);
+        $rounding_decimals = max(0, min($rounding_decimals, 4));
+
+        return [
+            'exchange_rate'     => $exchange_rate,
+            'fixed_markup_eur'  => $fixed_markup,
+            'rounding_decimals' => $rounding_decimals,
+        ];
+    }
+
+    public static function convert_xof_to_eur($xof, $config = [])
+    {
+        $safe_xof = self::to_positive_float($xof);
+        if ($safe_xof <= 0) {
+            return 0;
+        }
+
+        $exchange_rate    = isset($config['exchange_rate'])     ? (float) $config['exchange_rate']     : 655.957;
+        $fixed_markup     = isset($config['fixed_markup_eur'])  ? (float) $config['fixed_markup_eur']  : 9;
+        $rounding_decimals = isset($config['rounding_decimals']) ? (int)   $config['rounding_decimals'] : 2;
+
+        if ($exchange_rate <= 0) {
+            $exchange_rate = 655.957;
+        }
+
+        $rounding_decimals = max(0, min($rounding_decimals, 4));
+        $eur    = ($safe_xof / $exchange_rate) + $fixed_markup;
+        $result = self::round_with_threshold_to_int($eur, 0.2);
+
+        CWSB_Logger::debug('convert_xof_to_eur', [
+            'xof'                => $safe_xof,
+            'rate'               => $exchange_rate,
+            'markup'             => $fixed_markup,
+            'decimals'           => $rounding_decimals,
+            'rounding_mode'      => 'threshold_integer',
+            'rounding_threshold' => 0.2,
+            'eur'                => $result,
+        ]);
+
+        return $result;
     }
 
     public static function get_pricing_config()

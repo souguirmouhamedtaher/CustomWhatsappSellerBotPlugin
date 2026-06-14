@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 if (!defined('ABSPATH')) {
     exit;
@@ -68,6 +68,17 @@ class CWSB_Update_Product_Controller
             ],
         ]);
 
+        // EP3b - Edit-info screen (XOF)
+        register_rest_route(CWSB_NS, '/seller/product/edit-info-xof/by-flow-token', [
+            'methods'             => 'POST',
+            'callback'            => [self::class, 'get_product_edit_info_xof'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args'                => [
+                'flow_token' => ['required' => true],
+                'product_id' => ['required' => true],
+            ],
+        ]);
+
         // EP4 — Category-info screen
         register_rest_route(CWSB_NS, '/seller/product/category-info/by-flow-token', [
             'methods'             => 'POST',
@@ -88,6 +99,17 @@ class CWSB_Update_Product_Controller
                 'flow_token' => ['required' => true],
                 'product_id' => ['required' => true],
                 'data'       => ['required' => true],
+            ],
+        ]);
+
+        // EP5b - Apply update (XOF, flat payload)
+        register_rest_route(CWSB_NS, '/seller/product/update-xof/by-flow-token', [
+            'methods'             => 'POST',
+            'callback'            => [self::class, 'update_product_xof'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args'                => [
+                'flow_token' => ['required' => true],
+                'product_id' => ['required' => true],
             ],
         ]);
     }
@@ -136,6 +158,19 @@ class CWSB_Update_Product_Controller
         return self::map_result($result);
     }
 
+    public static function get_product_edit_info_xof(WP_REST_Request $request)
+    {
+        $flow_token = CWSB_Utils::normalize_text($request->get_param('flow_token'));
+        $product_id = (int) $request->get_param('product_id');
+
+        if ($flow_token === '' || $product_id <= 0) {
+            return CWSB_Response::error('invalid_params', 'flow_token and product_id are required.', 400);
+        }
+
+        $result = CWSB_Update_Product_Service::get_product_edit_info_xof($flow_token, $product_id);
+        return self::map_result($result);
+    }
+
     public static function get_product_category_info(WP_REST_Request $request)
     {
         $flow_token = CWSB_Utils::normalize_text($request->get_param('flow_token'));
@@ -164,6 +199,56 @@ class CWSB_Update_Product_Controller
         }
 
         $result = CWSB_Update_Product_Service::update_product($flow_token, $product_id, $data);
+        return self::map_result($result);
+    }
+
+    public static function update_product_xof(WP_REST_Request $request)
+    {
+        $flow_token = CWSB_Utils::normalize_text($request->get_param('flow_token'));
+        $product_id = (int) $request->get_param('product_id');
+
+        if ($flow_token === '' || $product_id <= 0) {
+            return CWSB_Response::error('invalid_params', 'flow_token and product_id are required.', 400);
+        }
+
+        $allowed_fields = [
+            'name',
+            'regular_xof',
+            'sale_xof',
+            'regular_eur',
+            'sale_eur',
+            'stock',
+            'length',
+            'width',
+            'height',
+            'dim_unit',
+            'weight',
+            'weight_unit',
+            'color',
+            'size',
+            'category_id',
+            'category_label',
+            'subcategory_id',
+            'subcategory_label',
+            'short_description',
+            'full_description',
+            'description',
+            'post_status',
+            'images',
+        ];
+
+        $data = [];
+        foreach ($allowed_fields as $field) {
+            if ($request->has_param($field)) {
+                $data[$field] = $request->get_param($field);
+            }
+        }
+
+        if (empty($data)) {
+            return CWSB_Response::error('invalid_params', 'No update fields provided.', 400);
+        }
+
+        $result = CWSB_Update_Product_Service::update_product_xof($flow_token, $product_id, $data);
         return self::map_result($result);
     }
 

@@ -54,21 +54,21 @@ class CWSB_Add_Product_Controller
 
         register_rest_route(CWSB_NS, '/seller/pricing/convert-xof', [
             'methods'             => 'POST',
-            'callback'            => [self::class, 'convert_eur_to_xos_prices'],
+            'callback'            => [self::class, 'convert_xof_prices'],
             'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
             'args'                => [
-                'regular_eur' => ['required' => false],
-                'promo_eur'   => ['required' => false],
+                'regular_xof' => ['required' => false],
+                'promo_xof'   => ['required' => false],
             ],
         ]);
 
         register_rest_route(CWSB_NS, '/seller/pricing/convert-eur-xos', [
             'methods'             => 'POST',
-            'callback'            => [self::class, 'convert_eur_to_xos_prices'],
+            'callback'            => [self::class, 'convert_xof_prices'],
             'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
             'args'                => [
-                'regular_eur' => ['required' => false],
-                'promo_eur'   => ['required' => false],
+                'regular_xof' => ['required' => false],
+                'promo_xof'   => ['required' => false],
             ],
         ]);
 
@@ -99,9 +99,9 @@ class CWSB_Add_Product_Controller
         return CWSB_Add_Product_Actions_Service::convert_tnd_prices($request);
     }
 
-    public static function convert_eur_to_xos_prices(WP_REST_Request $request)
+    public static function convert_xof_prices(WP_REST_Request $request)
     {
-        return CWSB_Add_Product_Actions_Service::convert_eur_to_xos_prices($request);
+        return CWSB_Add_Product_Actions_Service::convert_xof_prices($request);
     }
 
     public static function create_product_by_flow_token(WP_REST_Request $request)

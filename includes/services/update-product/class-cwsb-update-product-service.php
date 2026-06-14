@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 if (!defined('ABSPATH')) {
     exit;
@@ -88,6 +88,25 @@ class CWSB_Update_Product_Service
         return ['ok' => true, 'data' => $data];
     }
 
+    /**
+     * @param string $flow_token
+     * @param int    $product_id
+     * @return array { ok, data|code, message }
+     */
+    public static function get_product_edit_info_xof($flow_token, $product_id)
+    {
+        $seller_user_id = self::resolve_seller_user_id($flow_token);
+        if (!$seller_user_id) {
+            return self::seller_not_found();
+        }
+
+        $data = CWSB_Update_Product_Repository::find_product_edit_info_xof((int) $product_id, $seller_user_id);
+        if (!$data) {
+            return self::product_not_found();
+        }
+        return ['ok' => true, 'data' => $data];
+    }
+
     // -------------------------------------------------------------------------
     // EP4 — Category-info screen
     // -------------------------------------------------------------------------
@@ -129,6 +148,27 @@ class CWSB_Update_Product_Service
         }
 
         $ok = CWSB_Update_Product_Repository::update_product((int) $product_id, $seller_user_id, $data);
+        if (!$ok) {
+            return ['ok' => false, 'code' => 'update_failed', 'message' => 'Product not found, not owned, or update failed.'];
+        }
+
+        return ['ok' => true, 'data' => ['product_id' => (int) $product_id, 'updated' => true]];
+    }
+
+    /**
+     * @param string $flow_token
+     * @param int    $product_id
+     * @param array  $data
+     * @return array { ok, data|code, message }
+     */
+    public static function update_product_xof($flow_token, $product_id, $data)
+    {
+        $seller_user_id = self::resolve_seller_user_id($flow_token);
+        if (!$seller_user_id) {
+            return self::seller_not_found();
+        }
+
+        $ok = CWSB_Update_Product_Repository::update_product_xof((int) $product_id, $seller_user_id, $data);
         if (!$ok) {
             return ['ok' => false, 'code' => 'update_failed', 'message' => 'Product not found, not owned, or update failed.'];
         }

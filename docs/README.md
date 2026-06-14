@@ -4,14 +4,19 @@ Complete guide to the WhatsApp bot plugin architecture, APIs, and operations.
 
 ## Quick Navigation
 
+### Canonical Reference
+- **[PLUGIN_FULL_DOCUMENTATION.md](./PLUGIN_FULL_DOCUMENTATION.md)** — Full end-to-end technical documentation (architecture, lifecycle, security, endpoints, versioning, deployment)
+
 ### For Developers
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — System design, patterns, data flow
-- **[API_REFERENCE.md](./API_REFERENCE.md)** — All REST endpoints, parameters, responses
-- **[CACHING_STRATEGY.md](./CACHING_STRATEGY.md)** — Cache layers, TTLs, invalidation
+- **[ENDPOINTS.md](./ENDPOINTS.md)** — REST endpoints, parameters, responses
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** — Tables, columns, and meta keys used by plugin queries
+- **[PLUGIN_GUIDE.md](./PLUGIN_GUIDE.md)** — Introductory guide to WordPress plugin internals in this repo
 
 ### For DevOps/Operators
 - **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** — Deployment, testing, monitoring
-- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** — Common issues and solutions
+- **[DOCKER_TO_XAMPP_MIGRATION.md](./DOCKER_TO_XAMPP_MIGRATION.md)** — Local environment migration rationale and steps
+- **[TESTING_SQL_QUERIES.md](./TESTING_SQL_QUERIES.md)** — SQL validation scripts for seller/product/order data integrity
 
 ### For Product/Design
 - **[PHONE_NORMALIZATION.md](./PHONE_NORMALIZATION.md)** — Phone number formats (TN, FR, SN)
@@ -75,10 +80,11 @@ See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for step-by-step deployment.
 1. Create handler in `includes/services/class-cwsb-*-service.php`
 2. Register route in `includes/controllers/class-cwsb-*-controller.php`
 3. Add `prevent_response_caching()` to method
-4. Document in [API_REFERENCE.md](./API_REFERENCE.md)
+4. Document in [ENDPOINTS.md](./ENDPOINTS.md)
+5. Update [PLUGIN_FULL_DOCUMENTATION.md](./PLUGIN_FULL_DOCUMENTATION.md) endpoint inventory
 
 ### Debugging Cache Issues
-See [CACHING_STRATEGY.md](./CACHING_STRATEGY.md) → "Debugging & Diagnostics"
+See [ARCHITECTURE.md](./ARCHITECTURE.md) and [PLUGIN_FULL_DOCUMENTATION.md](./PLUGIN_FULL_DOCUMENTATION.md) performance sections
 
 ### Deploying Updates
 See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) → "Phase 2: Staging Deployment"
@@ -87,12 +93,12 @@ See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) → "Phase 2: Staging Deployment"
 
 ## Support
 
-**Issue?** Check [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)  
-**Question?** See [ARCHITECTURE.md](./ARCHITECTURE.md) for design details  
-**API help?** Refer to [API_REFERENCE.md](./API_REFERENCE.md)
+**Issue?** Check migration and SQL validation guides in this folder.  
+**Question?** See [ARCHITECTURE.md](./ARCHITECTURE.md) for design details.  
+**API help?** Refer to [ENDPOINTS.md](./ENDPOINTS.md) and [PLUGIN_FULL_DOCUMENTATION.md](./PLUGIN_FULL_DOCUMENTATION.md).
 
 ---
 
-**Version:** 1.0.0 (with 2026-04-06 fixes)  
+**Version:** 1.0.18 (current plugin header)  
 **Maintainer:** ILEYCOM Internships  
-**Last Update:** 2026-04-06
+**Last Update:** 2026-06-05

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 if (!defined('ABSPATH')) {
     exit;
@@ -53,6 +53,7 @@ class CWSB_Update_Product_Queries
                     p.post_status,
                     MAX(CASE WHEN pm.meta_key = '_sku'               THEN pm.meta_value END) AS sku,
                     MAX(CASE WHEN pm.meta_key = '_regular_price'     THEN pm.meta_value END) AS price_eur,
+                    MAX(CASE WHEN pm.meta_key = '_regular_price_xof' THEN pm.meta_value END) AS price_xof,
                     MAX(CASE WHEN pm.meta_key = '_regular_price_tnd' THEN pm.meta_value END) AS price_tnd,
                     MAX(CASE WHEN pm.meta_key = '_regular_price_wmcp' THEN pm.meta_value END) AS price_wmcp,
                     MAX(CASE WHEN pm.meta_key = '_stock'             THEN pm.meta_value END) AS stock,
@@ -85,7 +86,7 @@ class CWSB_Update_Product_Queries
                 'name'        => $row['post_title'],
                 'sku'         => isset($row['sku']) ? $row['sku'] : '',
                 'price_eur'   => isset($row['price_eur']) ? $row['price_eur'] : '',
-                'price_tnd'   => CWSB_Utils::decode_wmcp_tnd(isset($row['price_wmcp']) ? $row['price_wmcp'] : '', isset($row['price_tnd']) ? $row['price_tnd'] : ''),
+                'price_xof'   => isset($row['price_xof']) ? $row['price_xof'] : '',
                 'stock'       => CWSB_Utils::to_int_or_zero($row['stock']),
                 'post_status' => $row['post_status'],
                 'image_url'   => $image_url,
@@ -195,6 +196,74 @@ class CWSB_Update_Product_Queries
             'sale_eur'     => isset($row['sale_eur']) ? $row['sale_eur'] : '',
             'regular_tnd'  => CWSB_Utils::decode_wmcp_tnd(isset($row['regular_wmcp']) ? $row['regular_wmcp'] : '', isset($row['regular_tnd']) ? $row['regular_tnd'] : ''),
             'sale_tnd'     => CWSB_Utils::decode_wmcp_tnd(isset($row['sale_wmcp']) ? $row['sale_wmcp'] : '', isset($row['sale_tnd']) ? $row['sale_tnd'] : ''),
+            'stock'        => CWSB_Utils::to_int_or_zero($row['stock']),
+            'manage_stock' => ($row['manage_stock'] === 'yes'),
+            'length'       => isset($row['length']) ? $row['length'] : '',
+            'width'        => isset($row['width']) ? $row['width'] : '',
+            'height'       => isset($row['height']) ? $row['height'] : '',
+            'dim_unit'     => !empty($row['dim_unit']) ? $row['dim_unit'] : 'cm',
+            'weight'       => isset($row['weight']) ? $row['weight'] : '',
+            'weight_unit'  => !empty($row['weight_unit']) ? $row['weight_unit'] : 'kg',
+            'color'        => isset($row['color']) ? $row['color'] : '',
+            'size'         => isset($row['size']) ? $row['size'] : '',
+        ];
+    }
+
+    /**
+     * Returns editable fields with XOF-based pricing values.
+     *
+     * @param int $product_id
+     * @param int $seller_user_id
+     * @return array|null
+     */
+    public static function find_product_edit_info_xof($product_id, $seller_user_id)
+    {
+        global $wpdb;
+
+        $product_id     = (int) $product_id;
+        $seller_user_id = (int) $seller_user_id;
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT
+                    p.post_title,
+                    MAX(CASE WHEN pm.meta_key = '_regular_price'      THEN pm.meta_value END) AS regular_eur,
+                    MAX(CASE WHEN pm.meta_key = '_sale_price'         THEN pm.meta_value END) AS sale_eur,
+                    MAX(CASE WHEN pm.meta_key = '_regular_price_xof'  THEN pm.meta_value END) AS regular_xof,
+                    MAX(CASE WHEN pm.meta_key = '_sale_price_xof'     THEN pm.meta_value END) AS sale_xof,
+                    MAX(CASE WHEN pm.meta_key = '_stock'              THEN pm.meta_value END) AS stock,
+                    MAX(CASE WHEN pm.meta_key = '_manage_stock'       THEN pm.meta_value END) AS manage_stock,
+                    MAX(CASE WHEN pm.meta_key = '_length'             THEN pm.meta_value END) AS length,
+                    MAX(CASE WHEN pm.meta_key = '_width'              THEN pm.meta_value END) AS width,
+                    MAX(CASE WHEN pm.meta_key = '_height'             THEN pm.meta_value END) AS height,
+                    MAX(CASE WHEN pm.meta_key = '_cwsb_dim_unit'      THEN pm.meta_value END) AS dim_unit,
+                    MAX(CASE WHEN pm.meta_key = '_weight'             THEN pm.meta_value END) AS weight,
+                    MAX(CASE WHEN pm.meta_key = '_cwsb_weight_unit'   THEN pm.meta_value END) AS weight_unit,
+                    MAX(CASE WHEN pm.meta_key = '_cwsb_color'         THEN pm.meta_value END) AS color,
+                    MAX(CASE WHEN pm.meta_key = '_cwsb_size'          THEN pm.meta_value END) AS size
+                   FROM {$wpdb->posts} p
+              LEFT JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID
+                  WHERE p.ID          = %d
+                    AND p.post_type   = 'product'
+                    AND p.post_author = %d
+               GROUP BY p.ID, p.post_title",
+                $product_id,
+                $seller_user_id
+            ),
+            ARRAY_A
+        );
+
+        if (!$row) {
+            return null;
+        }
+
+        return [
+            'product_id'   => $product_id,
+            'product_name' => $row['post_title'],
+            'regular_eur'  => isset($row['regular_eur']) ? $row['regular_eur'] : '',
+            'sale_eur'     => isset($row['sale_eur']) ? $row['sale_eur'] : '',
+            'regular_xof'  => isset($row['regular_xof']) ? $row['regular_xof'] : '',
+            'sale_xof'     => isset($row['sale_xof']) ? $row['sale_xof'] : '',
             'stock'        => CWSB_Utils::to_int_or_zero($row['stock']),
             'manage_stock' => ($row['manage_stock'] === 'yes'),
             'length'       => isset($row['length']) ? $row['length'] : '',

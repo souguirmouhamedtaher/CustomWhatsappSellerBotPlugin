@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Standalone unit test runner for CWSB pure calculation helpers.
  *
