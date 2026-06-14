@@ -691,6 +691,94 @@ class CWSB_Add_Product_Support_Service
         return $errors;
     }
 
+    public static function validate_create_payload_xof($product)
+    {
+        $p = is_array($product) ? $product : [];
+        $errors = [];
+
+        $name = CWSB_Utils::normalize_text(isset($p['name']) ? $p['name'] : '');
+        if ($name === '') {
+            $errors[] = [
+                'field' => 'product.name',
+                'code' => 'required',
+                'message' => 'Product name is required.',
+            ];
+        }
+
+        $category_id = CWSB_Utils::normalize_text(isset($p['category_id']) ? $p['category_id'] : '');
+        if ($category_id === '') {
+            $errors[] = [
+                'field' => 'product.category_id',
+                'code' => 'required',
+                'message' => 'Product category is required.',
+            ];
+        }
+
+        if (isset($p['images_base64']) && !is_array($p['images_base64'])) {
+            $errors[] = [
+                'field' => 'product.images_base64',
+                'code' => 'invalid_type',
+                'message' => 'Product images must be provided as an array.',
+            ];
+        }
+
+        $image_count = self::count_non_empty_images(isset($p['images_base64']) ? $p['images_base64'] : []);
+        if ($image_count > (int) CWSB_MAX_PRODUCT_UPLOAD_IMAGES) {
+            $errors[] = [
+                'field' => 'product.images_base64',
+                'code' => 'max_items_exceeded',
+                'message' => sprintf('A maximum of %d product images is allowed.', (int) CWSB_MAX_PRODUCT_UPLOAD_IMAGES),
+            ];
+        }
+
+        $quantity = isset($p['quantity']) ? (int) $p['quantity'] : (isset($p['quantite']) ? (int) $p['quantite'] : 0);
+        if ($quantity <= 0) {
+            $errors[] = [
+                'field' => 'product.quantity',
+                'code' => 'invalid_range',
+                'message' => 'Quantity must be greater than zero.',
+            ];
+        }
+
+        $pricing = isset($p['pricing']) && is_array($p['pricing']) ? $p['pricing'] : [];
+        $regular_xof = self::to_positive_float(
+            isset($pricing['regular_xof']) ? $pricing['regular_xof'] :
+            (isset($pricing['prix_regulier_xof']) ? $pricing['prix_regulier_xof'] :
+            (isset($p['prix_regulier_xof']) ? $p['prix_regulier_xof'] : null))
+        );
+        $promo_xof = self::to_positive_float(
+            isset($pricing['promo_xof']) ? $pricing['promo_xof'] :
+            (isset($pricing['prix_promo_xof']) ? $pricing['prix_promo_xof'] :
+            (isset($p['prix_promo_xof']) ? $p['prix_promo_xof'] : null))
+        );
+
+        if ($regular_xof <= 0) {
+            $errors[] = [
+                'field' => 'product.pricing.regular_xof',
+                'code' => 'required',
+                'message' => 'A regular price (XOF) is required.',
+            ];
+        }
+
+        if ($regular_xof > 0 && $promo_xof > 0 && $promo_xof >= $regular_xof) {
+            $errors[] = [
+                'field' => 'product.pricing.promo_xof',
+                'code' => 'invalid_range',
+                'message' => 'Promo XOF must be strictly lower than regular XOF.',
+            ];
+        }
+
+        if ($promo_xof > 0 && $regular_xof <= 0) {
+            $errors[] = [
+                'field' => 'product.pricing.regular_xof',
+                'code' => 'required',
+                'message' => 'Regular XOF is required when promo XOF is provided.',
+            ];
+        }
+
+        return $errors;
+    }
+
     public static function generate_auto_sku($prefix, $seller_user_id)
     {
         global $wpdb;

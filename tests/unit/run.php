@@ -489,6 +489,40 @@ run_test('validate_create_payload: legacy field names (prix_regulier_tnd, quanti
     assert_empty_array(CWSB_Add_Product_Support_Service::validate_create_payload($payload), 'legacy fields valid');
 });
 
+run_test('validate_create_payload_xof: valid payload returns no errors', function () {
+    $payload = [
+        'name'        => 'Produit XOF',
+        'category_id' => 'cats',
+        'quantity'    => 3,
+        'pricing'     => ['regular_xof' => 100000],
+    ];
+    assert_empty_array(CWSB_Add_Product_Support_Service::validate_create_payload_xof($payload), 'xof payload valid');
+});
+
+run_test('validate_create_payload_xof: missing regular_xof returns error', function () {
+    $payload = [
+        'name'        => 'Produit XOF',
+        'category_id' => 'cats',
+        'quantity'    => 3,
+        'pricing'     => ['promo_xof' => 90000],
+    ];
+    $errors = CWSB_Add_Product_Support_Service::validate_create_payload_xof($payload);
+    $fields = array_column($errors, 'field');
+    assert_equals(true, in_array('product.pricing.regular_xof', $fields, true), 'missing regular xof error');
+});
+
+run_test('validate_create_payload_xof: promo_xof >= regular_xof returns error', function () {
+    $payload = [
+        'name'        => 'Produit XOF',
+        'category_id' => 'cats',
+        'quantity'    => 3,
+        'pricing'     => ['regular_xof' => 100000, 'promo_xof' => 100000],
+    ];
+    $errors = CWSB_Add_Product_Support_Service::validate_create_payload_xof($payload);
+    $fields = array_column($errors, 'field');
+    assert_equals(true, in_array('product.pricing.promo_xof', $fields, true), 'promo xof invalid range error');
+});
+
 run_test('validate_create_payload: non-array payload returns errors gracefully', function () {
     $errors = CWSB_Add_Product_Support_Service::validate_create_payload(null);
     assert_equals(true, count($errors) > 0, 'non-array has errors');

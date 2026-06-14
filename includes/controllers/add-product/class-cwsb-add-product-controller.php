@@ -82,6 +82,17 @@ class CWSB_Add_Product_Controller
                 'idempotency_key' => ['required' => false],
             ],
         ]);
+
+        register_rest_route(CWSB_NS, '/seller/product/create-xof/by-flow-token', [
+            'methods' => 'POST',
+            'callback' => [self::class, 'create_product_xof_by_flow_token'],
+            'permission_callback' => ['CWSB_Auth_Middleware', 'require_api_key'],
+            'args' => [
+                'flow_token' => ['required' => true],
+                'product' => ['required' => true],
+                'idempotency_key' => ['required' => false],
+            ],
+        ]);
     }
 
     public static function list_product_categories(WP_REST_Request $request)
@@ -107,6 +118,11 @@ class CWSB_Add_Product_Controller
     public static function create_product_by_flow_token(WP_REST_Request $request)
     {
         return CWSB_Add_Product_Actions_Service::create_product_by_flow_token($request);
+    }
+
+    public static function create_product_xof_by_flow_token(WP_REST_Request $request)
+    {
+        return CWSB_Add_Product_Actions_Service::create_product_xof_by_flow_token($request);
     }
 }
 
